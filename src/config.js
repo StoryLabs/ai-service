@@ -24,7 +24,8 @@ export const DEFAULTS = {
     frequencyPenalty: null,
     stop: null,
     seed: null,
-    responseFormat: null
+    responseFormat: null,
+    reasoningEffort: null
   },
   muse: {
     temperature: 1.0,
@@ -39,7 +40,8 @@ export const DEFAULTS = {
     frequencyPenalty: null,
     stop: null,
     seed: null,
-    responseFormat: null
+    responseFormat: null,
+    reasoningEffort: null
   },
   global: {
     temperature: 0.2,
@@ -51,7 +53,8 @@ export const DEFAULTS = {
     frequencyPenalty: null,
     stop: null,
     seed: null,
-    responseFormat: null
+    responseFormat: null,
+    reasoningEffort: null
   }
 }
 
@@ -83,6 +86,12 @@ function validateResponseFormat(value) {
   if (typeof value !== 'object' || Array.isArray(value)) throw new AIError('responseFormat debe ser objeto', { code: 'MOT-AI-016', provider: 'global' })
 }
 
+function validateReasoningEffort(value) {
+  if (value === null || value === undefined) return
+  const allowed = ['low', 'medium', 'high', 'xhigh', 'minimal', 'none']
+  if (!allowed.includes(value)) throw new AIError(`reasoningEffort debe ser uno de ${allowed.join(', ')}: ${value}`, { code: 'MOT-AI-016', provider: 'global' })
+}
+
 export function applyDefaults(model, config = {}, providerName) {
   const d = DEFAULTS[providerName] ?? DEFAULTS.global
 
@@ -95,6 +104,7 @@ export function applyDefaults(model, config = {}, providerName) {
   if (config.stop !== undefined) validateStop(config.stop)
   if (config.seed !== undefined) validateSeed(config.seed)
   if (config.responseFormat !== undefined) validateResponseFormat(config.responseFormat)
+  if (config.reasoningEffort !== undefined) validateReasoningEffort(config.reasoningEffort)
   if (config.timeoutMs !== undefined) {
     if (typeof config.timeoutMs !== 'number' || config.timeoutMs <= 0) throw new AIError('timeoutMs debe ser número >0', { code: 'MOT-AI-016', provider: 'global' })
   }
@@ -113,6 +123,7 @@ export function applyDefaults(model, config = {}, providerName) {
     frequencyPenalty: config.frequencyPenalty ?? d.frequencyPenalty,
     stop: config.stop ?? d.stop,
     seed: config.seed ?? d.seed,
-    responseFormat: config.responseFormat ?? d.responseFormat
+    responseFormat: config.responseFormat ?? d.responseFormat,
+    reasoningEffort: config.reasoningEffort ?? d.reasoningEffort
   }
 }

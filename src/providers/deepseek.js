@@ -61,7 +61,7 @@ export const classifyFailure = createClassifyFailure({
  * Internal helper that does the fetch and normalizes to NormalizedResult.
  * Accepts already-resolved config fields.
  */
-async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, retries, includeRaw }) {
+async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, reasoningEffort, userId, signal, logger, retries, includeRaw }) {
   const log = resolveLogger(logger)
 
   const apiKey = (process.env.DEEPSEEK_API_KEY ?? '').trim()
@@ -76,6 +76,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
 
   const maxTokensLimit = resolveMaxTokens(maxTokens, model)
 
+  // reasoningEffort is Muse-only, ignored for DeepSeek
   const payload = {
     model,
     messages,

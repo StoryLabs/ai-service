@@ -50,7 +50,7 @@ export const classifyMuseFailure = createClassifyFailure({
   ContextError: ContextExceededError
 })
 
-async function executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, retries, includeRaw }) {
+async function executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, reasoningEffort, userId, signal, logger, retries, includeRaw }) {
   const log = resolveLogger(logger)
   const apiKey = (process.env.MUSE_API_KEY ?? process.env.MUSE_CONTRIBUTOR_TOKEN ?? '').trim()
   if (!apiKey) {
@@ -69,6 +69,7 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
     ...(frequencyPenalty != null ? { frequency_penalty: frequencyPenalty } : {}),
     ...(seed != null ? { seed } : {}),
     ...(responseFormat != null ? { response_format: responseFormat } : {}),
+    ...(reasoningEffort != null ? { reasoning_effort: reasoningEffort } : {}),
     ...(userId ? { safety_identifier: String(userId) } : {})
   }
   try {
@@ -80,7 +81,7 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
     })
     if (!response.ok) {
       const retry = await classifyMuseFailure(response, retries, log)
-      return executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, retries: retry, includeRaw })
+      return executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, reasoningEffort, userId, signal, logger: log, retries: retry, includeRaw })
     }
     let result
     try {
@@ -125,6 +126,7 @@ export async function callMuse({
   stop = null,
   seed = null,
   responseFormat = null,
+  reasoningEffort = null,
   userId = null,
   timeoutMs = DEFAULT_TIMEOUT_MUSE,
   signal: callerSignal,
@@ -140,7 +142,7 @@ export async function callMuse({
   }
   const signal = controller.signal
   try {
-    return await executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, retries: MUSE_MAX_RETRIES, includeRaw })
+    return await executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, reasoningEffort, userId, signal, logger: log, retries: MUSE_MAX_RETRIES, includeRaw })
   } catch (err) {
     if (err.name === 'AbortError') {
       log.error('MOT-AI-012', 'Timeout consultando Muse', { timeoutMs })
@@ -171,7 +173,8 @@ export const museProvider = {
       frequencyPenalty: config.frequencyPenalty ?? null,
       stop: config.stop ?? null,
       seed: config.seed ?? null,
-      responseFormat: config.responseFormat ?? null
+      responseFormat: config.responseFormat ?? null,
+      reasoningEffort: config.reasoningEffort ?? null
     }
     if (signal) {
       return executeMuse({
@@ -186,6 +189,7 @@ export const museProvider = {
         stop: merged.stop,
         seed: merged.seed,
         responseFormat: merged.responseFormat,
+        reasoningEffort: merged.reasoningEffort,
         userId,
         signal,
         logger: log,
@@ -211,6 +215,7 @@ export const museProvider = {
       stop: merged.stop,
       seed: merged.seed,
       responseFormat: merged.responseFormat,
+      reasoningEffort: merged.reasoningEffort,
       userId,
       timeoutMs: merged.timeoutMs,
       logger: log,

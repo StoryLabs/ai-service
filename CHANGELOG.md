@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.8 — 2026-08-21
+- `MODEL_NAME` global (`DEEPSEEK`| `META`) + `reasoningEffort` (`low`/`xhigh`) — `bookingAPI` mapea `modo NORMAL`->`FLASH`/`low`, `PRO`->`PRO`/`xhigh` via `config.MODEL_NAME` (APP_ENV), `Muse` usa `reasoning_effort`, `DeepSeek` lo ignora. `config` 12-key: añade `reasoningEffort` validación `MOT-AI-016` (`low`|`medium`|`high`|`xhigh`|`minimal`|`none` no soportado en Muse Spark)
+
 ## 0.1.7 — 2026-08-21
 - Fix Muse: `MUSE_URL` -> `https://api.meta.ai/v1/chat/completions` (real, verificado `curl https://api.meta.ai/v1/models` + `chat/completions` pong), payload `max_completion_tokens` (no `max_tokens`), omite `top_k`/`stop` (400 en Muse Spark), `safety_identifier` para `userId`, `temperature` default `1.0` per docs (tuned to 1.0)
 

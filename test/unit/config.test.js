@@ -11,11 +11,11 @@ describe('config applyDefaults', () => {
   it('deepseek NORMAL 6000', () => {
     expect(applyDefaults('deepseek-v4-flash', {}, 'deepseek').maxTokens).toBe(6000)
   })
-  it('muse defaults 4096/120_000/0.3', () => {
+  it('muse defaults 4096/120_000/1.0', () => {
     const c = applyDefaults('muse-spark-1.2-contributor', {}, 'muse')
     expect(c.maxTokens).toBe(4096)
     expect(c.timeoutMs).toBe(120_000)
-    expect(c.temperature).toBe(0.3)
+    expect(c.temperature).toBe(1.0)
   })
   it('config.maxTokens explicit prevalece', () => {
     expect(applyDefaults('deepseek-v4-pro', { maxTokens: 123 }, 'deepseek').maxTokens).toBe(123)

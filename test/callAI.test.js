@@ -156,7 +156,7 @@ describe('callAI integration mocked fetch', () => {
   it('muse con env var → fetch muse success', async () => {
     process.env.MUSE_API_KEY = 'sk-muse'
     global.fetch = async (url, opts) => {
-      expect(url).toBe('https://api.muse.example.com/v1/chat/completions')
+      expect(url).toBe('https://api.meta.ai/v1/chat/completions')
       const body = JSON.parse(opts.body)
       expect(body.model).toBe(MUSE_MODELS.SPARK)
       return {
