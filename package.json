@@ -1,6 +1,6 @@
 {
   "name": "@cachac/ai-service",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Motmot centralized AI service \u2014 unified callAI across DeepSeek, Muse Spark and future providers.",
   "type": "module",
   "main": "src/index.js",

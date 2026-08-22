@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 import { resolveProvider, listModels, getProvider, registry } from '../src/providers/registry.js'
-import { MODELOS } from '../src/providers/deepseek.js'
+import { MODELS } from '../src/providers/deepseek.js'
 import { MUSE_MODELS } from '../src/providers/muse.js'
 import { UnknownModelError, ProviderNotRegisteredError } from '../src/errors.js'
 
@@ -14,7 +14,7 @@ describe('registry resolveProvider', () => {
     expect(p.name).toBe('deepseek')
   })
   it('deepseek-v4-pro → deepseek', () => {
-    const p = resolveProvider({ model: MODELOS.PRO })
+    const p = resolveProvider({ model: MODELS.PRO })
     expect(p.name).toBe('deepseek')
   })
   it('cualquier deepseek-* prefijo → deepseek', () => {
@@ -46,13 +46,13 @@ describe('registry resolveProvider', () => {
     expect(() => resolveProvider({ model: 'custom-flash', provider: 'deepseek' })).toThrow(UnknownModelError)
   })
   it('provider explicit valido', () => {
-    const p = resolveProvider({ model: MODELOS.NORMAL, provider: 'deepseek' })
+    const p = resolveProvider({ model: MODELS.NORMAL, provider: 'deepseek' })
     expect(p.name).toBe('deepseek')
   })
   it('provider unknown → ProviderNotRegisteredError MOT-AI-017', () => {
     let caught
     try {
-      resolveProvider({ model: MODELOS.NORMAL, provider: 'openai' })
+      resolveProvider({ model: MODELS.NORMAL, provider: 'openai' })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -63,8 +63,8 @@ describe('registry resolveProvider', () => {
   })
   it('listModels contiene ambos providers models', () => {
     const models = listModels()
-    expect(models.includes(MODELOS.NORMAL)).toBe(true)
-    expect(models.includes(MODELOS.PRO)).toBe(true)
+    expect(models.includes(MODELS.NORMAL)).toBe(true)
+    expect(models.includes(MODELS.PRO)).toBe(true)
     expect(models.includes(MUSE_MODELS.SPARK)).toBe(true)
   })
   it('getProvider deepseek y muse existen', () => {

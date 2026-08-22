@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
-import { callAI, aiComplete, MODELOS, MUSE_MODELS, StreamingNotSupportedError } from '../src/index.js'
+import { callAI, aiComplete, MODELS, MUSE_MODELS, StreamingNotSupportedError } from '../src/index.js'
 import { UnknownModelError, ContextExceededError, DeepSeekContextoExcedidoError, AIError } from '../src/errors.js'
 
 const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
@@ -29,7 +29,7 @@ describe('callAI integration mocked fetch', () => {
     global.fetch = async (url, opts) => {
       expect(url).toBe('https://api.deepseek.com/v1/chat/completions')
       const body = JSON.parse(opts.body)
-      expect(body.model).toBe(MODELOS.NORMAL)
+      expect(body.model).toBe(MODELS.NORMAL)
       expect(body.temperature).toBe(0.2)
       return {
         ok: true,
@@ -41,7 +41,7 @@ describe('callAI integration mocked fetch', () => {
     }
     const res = await callAI({ logger: mockLogger,
       messages: [{ role: 'user', content: 'Hi' }],
-      model: MODELOS.NORMAL,
+      model: MODELS.NORMAL,
       config: { temperature: 0.2 }
     })
     expect(res.content).toBe('Hola mundo')
@@ -49,7 +49,7 @@ describe('callAI integration mocked fetch', () => {
     expect(res.usage).toEqual({ promptTokens: 10, completionTokens: 20, totalTokens: 30 })
     expect(res.finishReason).toBe('stop')
     expect(res.provider).toBe('deepseek')
-    expect(res.model).toBe(MODELOS.NORMAL)
+    expect(res.model).toBe(MODELS.NORMAL)
     expect(!('raw' in res) || res.raw === undefined).toBeTruthy()
   })
 
@@ -59,7 +59,7 @@ describe('callAI integration mocked fetch', () => {
       ok: true,
       json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} })
     })
-    const res = await aiComplete({logger: mockLogger,messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const res = await aiComplete({logger: mockLogger,messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL })
     expect(res.content).toBe('ok')
   })
 
@@ -70,7 +70,7 @@ describe('callAI integration mocked fetch', () => {
       expect(body.messages[0].content).toBe('via prompts')
       return { ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} }) }
     }
-    const res = await callAI({ logger: mockLogger, prompts: [{ role: 'user', content: 'via prompts' }], model: MODELOS.NORMAL })
+    const res = await callAI({ logger: mockLogger, prompts: [{ role: 'user', content: 'via prompts' }], model: MODELS.NORMAL })
     expect(res.content).toBe('ok')
   })
 
@@ -86,7 +86,7 @@ describe('callAI integration mocked fetch', () => {
     const res = await callAI({
       messages: [{ role: 'user', content: 'from messages' }],
       prompts: [{ role: 'user', content: 'from prompts' }],
-      model: MODELOS.NORMAL,
+      model: MODELS.NORMAL,
       logger
     })
     expect(res.content).toBe('ok')
@@ -120,7 +120,7 @@ describe('callAI integration mocked fetch', () => {
     }
     let caught
     try {
-      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -178,7 +178,7 @@ describe('callAI integration mocked fetch', () => {
     process.env.DEEPSEEK_API_KEY = 'sk-test'
     let caught
     try {
-      for await (const _chunk of callAI.stream({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })) {
+      for await (const _chunk of callAI.stream({ messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL })) {
         // should not yield
       }
       throw new Error('should have thrown')
@@ -194,7 +194,7 @@ describe('callAI integration mocked fetch', () => {
     const { streamAI } = await import('../src/stream.js')
     let caught
     try {
-      for await (const _c of streamAI({ model: MODELOS.NORMAL })) {
+      for await (const _c of streamAI({ model: MODELS.NORMAL })) {
         // should not yield
       }
       throw new Error('should have thrown')
@@ -212,14 +212,14 @@ describe('callAI integration mocked fetch', () => {
       id: 'abc'
     }
     global.fetch = async () => ({ ok: true, json: async () => rawPayload })
-    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL, config: { includeRaw: true } })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL, config: { includeRaw: true } })
     expect(res.raw).toEqual(rawPayload)
   })
 
   it('no expone credentials en resultado', async () => {
     process.env.DEEPSEEK_API_KEY = 'sk-super-secret-123'
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'hi' } }], usage: {} }) })
-    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL })
     const serialized = JSON.stringify(res)
     expect(serialized.includes('sk-super-secret-123')).toBe(false)
     expect(serialized.includes('DEEPSEEK_API_KEY')).toBe(false)
@@ -234,7 +234,7 @@ describe('callAI integration mocked fetch', () => {
     })
     let caught
     try {
-      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.NORMAL })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -245,8 +245,8 @@ describe('callAI integration mocked fetch', () => {
   })
 
   it('messages vacío → AIError', async () => {
-    await expect(callAI({ logger: mockLogger, messages: [], model: MODELOS.NORMAL })).rejects.toThrow(AIError)
-    await expect(callAI({ logger: mockLogger, model: MODELOS.NORMAL })).rejects.toThrow(AIError)
+    await expect(callAI({ logger: mockLogger, messages: [], model: MODELS.NORMAL })).rejects.toThrow(AIError)
+    await expect(callAI({ logger: mockLogger, model: MODELS.NORMAL })).rejects.toThrow(AIError)
   })
 
   it('model missing → AIError', async () => {

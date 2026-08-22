@@ -11,14 +11,14 @@ export const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 // 180 s. Subido junto con MAX_TOKENS: agotar 8 000 tokens a ~55 tok/s ronda los 145 s.
 export const DEFAULT_TIMEOUT_MS = 180_000
 
-export const MODELOS = {
+export const MODELS = {
   NORMAL: 'deepseek-v4-flash',
   PRO: 'deepseek-v4-pro'
 }
 
 export const MAX_TOKENS = {
-  [MODELOS.NORMAL]: 6000,
-  [MODELOS.PRO]: 8000
+  [MODELS.NORMAL]: 6000,
+  [MODELS.PRO]: 8000
 }
 
 export const TOPE_POR_DEFECTO = 4000
@@ -178,7 +178,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
  */
 export const callDeepSeek = async ({
   messages,
-  model = MODELOS.NORMAL,
+  model = MODELS.NORMAL,
   temperature = 0.2,
   maxTokens = null,
   topP = null,
@@ -246,7 +246,7 @@ import { StreamingNotSupportedError } from '../errors.js'
 
 export const deepseekProvider = {
   name: 'deepseek',
-  models: Object.values(MODELOS),
+  models: Object.values(MODELS),
   supports(model) {
     return model.startsWith('deepseek-') || this.models.includes(model)
   },

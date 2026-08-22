@@ -3,7 +3,7 @@ import { AIError, StreamingNotSupportedError } from './errors.js'
 import { resolveLogger } from './logger.js'
 import {
   deepseekProvider,
-  MODELOS as DeepSeekModelos,
+  MODELS as DeepSeekModels,
   MAX_TOKENS,
   parseUsage,
   DEEPSEEK_URL,
@@ -24,17 +24,14 @@ register(museProvider)
 // Populate model table for exact matches (avoids circular import)
 // includes new Muse id + legacy alias for backward compat
 setModelTable({
-  [DeepSeekModelos.NORMAL]: 'deepseek',
-  [DeepSeekModelos.PRO]: 'deepseek',
+  [DeepSeekModels.NORMAL]: 'deepseek',
+  [DeepSeekModels.PRO]: 'deepseek',
   [MUSE_MODELS.SPARK]: 'muse',
   'muse-spark-1.2-contributor': 'muse'
 })
 
-// Re-export MODELOS (legacy) and MODELS alias
-export const MODELOS = DeepSeekModelos
-export const MODELS = MODELOS
+export const MODELS = DeepSeekModels
 export { MUSE_MODELS }
-export const MODELOS_MUSE = MUSE_MODELS
 
 export { MAX_TOKENS, parseUsage, DEEPSEEK_URL, DEFAULT_TIMEOUT_MS, callDeepSeek, topeDeRespuesta, esTransitorio, esContextoExcedido, clasificarFallo }
 

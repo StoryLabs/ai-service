@@ -11,9 +11,9 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 # @cachac:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @cachac/ai-service@^0.1.1
+pnpm add @cachac/ai-service@^0.2.0
 # or
-npm install @cachac/ai-service@^0.1.1
+npm install @cachac/ai-service@^0.2.0
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.
@@ -33,20 +33,20 @@ Each adapter reads **its own env var**, isolated. Rotating one key doesn't affec
 
 | key | model id literal | provider | MAX_TOKENS default | timeout default |
 |-----|------------------|----------|-------------------|-----------------|
-| `MODELOS.NORMAL` | `deepseek-v4-flash` | `deepseek` | 6000 | 180_000 ms |
-| `MODELOS.PRO` | `deepseek-v4-pro` | `deepseek` | 8000 | 180_000 ms |
-| `MODELOS_MUSE.SPARK` | `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` (`muse-spark-1.2-contributor` alias) | `muse` | 4096 | 120_000 ms |
+| `MODELS.NORMAL` | `deepseek-v4-flash` | `deepseek` | 6000 | 180_000 ms |
+| `MODELS.PRO` | `deepseek-v4-pro` | `deepseek` | 8000 | 180_000 ms |
+| `MUSE_MODELS.SPARK` | `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` (`muse-spark-1.2-contributor` alias) | `muse` | 4096 | 120_000 ms |
 | fallback | any `deepseek-*` | `deepseek` | 4000 | 180_000 ms |
 | fallback | any `muse-*` | `muse` | 4000 | 120_000 ms |
 
 IDs are literals, no translation.
 
 ```js
-import { MODELOS, MODELS, MUSE_MODELS, MODELOS_MUSE } from '@cachac/ai-service'
-// MODELOS === MODELS
-// MODELOS.NORMAL === 'deepseek-v4-flash'
-// MODELOS.PRO === 'deepseek-v4-pro'
-// MUSE_MODELS.SPARK === 'muse-spark-1.2-contributor'
+import { MODELS, MUSE_MODELS } from '@cachac/ai-service'
+// MODELS
+// MODELS.NORMAL === 'deepseek-v4-flash'
+// MODELS.PRO === 'deepseek-v4-pro'
+// MUSE_MODELS.SPARK === 'LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU'
 ```
 
 ## Usage
@@ -54,12 +54,12 @@ import { MODELOS, MODELS, MUSE_MODELS, MODELOS_MUSE } from '@cachac/ai-service'
 ### Non-streaming
 
 ```js
-import { callAI, MODELOS, ContextExceededError } from '@cachac/ai-service'
+import { callAI, MODELS, ContextExceededError } from '@cachac/ai-service'
 
 try {
   const { content, reasoningContent, usage, finishReason, provider, model } = await callAI({
     messages: [{ role: 'system', content: 'Eres asistente clínico...' }, { role: 'user', content: 'Hola' }],
-    model: MODELOS.NORMAL, // 'deepseek-v4-flash'
+    model: MODELS.NORMAL, // 'deepseek-v4-flash'
     config: { temperature: 0.2, maxTokens: 6000, timeoutMs: 180_000 },
     userId: '507f...' // optional, passed as user_id to provider
   })
@@ -77,7 +77,7 @@ try {
 Alias `prompts` (compat RQ):
 
 ```js
-await callAI({ prompts: messages, model: MODELOS.PRO, config: { temperature: 0.2 } })
+await callAI({ prompts: messages, model: MODELS.PRO, config: { temperature: 0.2 } })
 // messages prevalece si ambos llegan; se loguea MOT-AI-015
 ```
 
@@ -90,14 +90,14 @@ await callAI({ messages, model: 'custom-flash', provider: 'deepseek' })
 Direct DeepSeek port (compat):
 
 ```js
-import { callDeepSeek, MODELOS } from '@cachac/ai-service'
-const { content, usage } = await callDeepSeek({ messages, model: MODELOS.PRO, temperature: 0.2 })
+import { callDeepSeek, MODELS } from '@cachac/ai-service'
+const { content, usage } = await callDeepSeek({ messages, model: MODELS.PRO, temperature: 0.2 })
 ```
 
 ### Error handling
 
 ```js
-import { callAI, MODELOS, AIError, ContextExceededError, DeepSeekContextoExcedidoError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@cachac/ai-service'
+import { callAI, MODELS, AIError, ContextExceededError, DeepSeekContextoExcedidoError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@cachac/ai-service'
 
 try {
   await callAI({ messages, model: 'unknown-model' })
@@ -154,13 +154,13 @@ Agotar 8 000 tokens a ~55 tok/s ronda 145 s, así que 180 s es necesario para el
 import { callAI, StreamingNotSupportedError } from '@cachac/ai-service'
 
 try {
-  for await (const chunk of callAI.stream({ messages, model: MODELOS.PRO })) {
+  for await (const chunk of callAI.stream({ messages, model: MODELS.PRO })) {
     process.stdout.write(chunk.contentDelta)
   }
 } catch (e) {
   if (e instanceof StreamingNotSupportedError) {
     // fallback a callAI normal
-    const res = await callAI({ messages, model: MODELOS.PRO })
+    const res = await callAI({ messages, model: MODELS.PRO })
   }
 }
 
@@ -211,7 +211,7 @@ import { makeLogger } from '@cachac/storylabs-logger'
 import { CODES } from './codes.js'
 const log = makeLogger({ app: 'bookingAPI', prefix: 'AI', codes: CODES })
 
-await callAI({ messages, model: MODELOS.NORMAL, logger: log })
+await callAI({ messages, model: MODELS.NORMAL, logger: log })
 ```
 
 Códigos `MOT-AI-01x` preservados de `deepseekClient.js`:

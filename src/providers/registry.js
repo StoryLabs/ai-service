@@ -25,7 +25,7 @@ const PREFIX_MAP = {
   'muse-': 'muse'
 }
 
-// Placeholder for MODEL_TABLE dynamic — populated after MODELOS imports to avoid circular
+// Placeholder for MODEL_TABLE dynamic — populated after MODELS imports to avoid circular
 let MODEL_TABLE = {}
 
 export function setModelTable(table) {

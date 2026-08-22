@@ -7,7 +7,7 @@ import {
   clasificarFallo,
   topeDeRespuesta,
   MAX_TOKENS,
-  MODELOS,
+  MODELS,
   TOPE_POR_DEFECTO,
   DEFAULT_TIMEOUT_MS,
   MAX_INTENTOS,
@@ -76,12 +76,12 @@ describe('esTransitorio', () => {
 
 describe('topeDeRespuesta', () => {
   it('retorna MAX_TOKENS por modelo cuando maxTokens null', () => {
-    expect(topeDeRespuesta(null, MODELOS.NORMAL)).toBe(6000)
-    expect(topeDeRespuesta(undefined, MODELOS.PRO)).toBe(8000)
+    expect(topeDeRespuesta(null, MODELS.NORMAL)).toBe(6000)
+    expect(topeDeRespuesta(undefined, MODELS.PRO)).toBe(8000)
   })
   it('respeta maxTokens explícito', () => {
-    expect(topeDeRespuesta(1234, MODELOS.NORMAL)).toBe(1234)
-    expect(topeDeRespuesta(0, MODELOS.PRO)).toBe(0)
+    expect(topeDeRespuesta(1234, MODELS.NORMAL)).toBe(1234)
+    expect(topeDeRespuesta(0, MODELS.PRO)).toBe(0)
   })
   it('fallback 4000 para modelo no tabulado', () => {
     expect(topeDeRespuesta(null, 'deepseek-unknown')).toBe(4000)
@@ -91,13 +91,13 @@ describe('topeDeRespuesta', () => {
 })
 
 describe('constantes', () => {
-  it('MODELOS literales preservados', () => {
-    expect(MODELOS.NORMAL).toBe('deepseek-v4-flash')
-    expect(MODELOS.PRO).toBe('deepseek-v4-pro')
+  it('MODELS literales preservados', () => {
+    expect(MODELS.NORMAL).toBe('deepseek-v4-flash')
+    expect(MODELS.PRO).toBe('deepseek-v4-pro')
   })
   it('MAX_TOKENS 6000/8000', () => {
-    expect(MAX_TOKENS[MODELOS.NORMAL]).toBe(6000)
-    expect(MAX_TOKENS[MODELOS.PRO]).toBe(8000)
+    expect(MAX_TOKENS[MODELS.NORMAL]).toBe(6000)
+    expect(MAX_TOKENS[MODELS.PRO]).toBe(8000)
   })
   it('DEFAULT_TIMEOUT_MS 180_000', () => {
     expect(DEFAULT_TIMEOUT_MS).toBe(180_000)
