@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI, aiComplete, MODELS, MUSE_MODELS, StreamingNotSupportedError } from '../src/index.js'
-import { UnknownModelError, ContextExceededError, DeepSeekContextoExcedidoError, AIError } from '../src/errors.js'
+import { UnknownModelError, ContextExceededError, DeepSeekContextExceededError, AIError } from '../src/errors.js'
 
 const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
@@ -239,7 +239,7 @@ describe('callAI integration mocked fetch', () => {
     } catch (err) {
       caught = err
     }
-    expect(caught).toBeInstanceOf(DeepSeekContextoExcedidoError)
+    expect(caught).toBeInstanceOf(DeepSeekContextExceededError)
     expect(caught).toBeInstanceOf(ContextExceededError)
     expect(caught.code).toBe('MOT-AI-013')
   })

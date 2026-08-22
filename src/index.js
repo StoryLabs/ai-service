@@ -9,10 +9,10 @@ import {
   DEEPSEEK_URL,
   DEFAULT_TIMEOUT_MS,
   callDeepSeek,
-  topeDeRespuesta,
-  esTransitorio,
-  esContextoExcedido,
-  clasificarFallo
+  resolveMaxTokens,
+  isTransient,
+  isContextExceeded,
+  classifyFailure
 } from './providers/deepseek.js'
 import { museProvider, MUSE_MODELS } from './providers/muse.js'
 import { register, resolveProvider, getProvider, listProviders, listModels, registry, setModelTable } from './providers/registry.js'
@@ -33,7 +33,7 @@ setModelTable({
 export const MODELS = DeepSeekModels
 export { MUSE_MODELS }
 
-export { MAX_TOKENS, parseUsage, DEEPSEEK_URL, DEFAULT_TIMEOUT_MS, callDeepSeek, topeDeRespuesta, esTransitorio, esContextoExcedido, clasificarFallo }
+export { MAX_TOKENS, parseUsage, DEEPSEEK_URL, DEFAULT_TIMEOUT_MS, callDeepSeek, resolveMaxTokens, isTransient, isContextExceeded, classifyFailure }
 
 export * from './errors.js'
 export { register, resolveProvider, getProvider, listProviders, listModels, registry }
@@ -115,7 +115,7 @@ export const aiComplete = callAI
  *     → AsyncIterable<Chunk> donde Chunk = { contentDelta, reasoningDelta, usage, finishReason, provider, model }
  *
  * Transporte wire recomendado: SSE (text/event-stream) para HTTP, AsyncIterable directo para uso interno.
- * Backpressure: for await respeta backpressure (yield espera al consumer).
+ * Backpressure: for await respeta backpressure (yield delay al consumer).
  * Cancelación: AbortSignal externo aborta fetch al provider.
  *
  * Este stub lanza StreamingNotSupportedError para que callers puedan feature-detect.

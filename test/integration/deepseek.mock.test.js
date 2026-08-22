@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI, MODELS } from '../../src/index.js'
-import { DeepSeekContextoExcedidoError, HTTPError, TimeoutError } from '../../src/errors.js'
+import { DeepSeekContextExceededError, HTTPError, TimeoutError } from '../../src/errors.js'
 const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
 describe('integration deepseek mock', () => {
@@ -46,13 +46,13 @@ describe('integration deepseek mock', () => {
     await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.FLASH })).rejects.toThrow(HTTPError)
   })
 
-  it('400 context → DeepSeekContextoExcedidoError sin reintento', async () => {
+  it('400 context → DeepSeekContextExceededError sin reintento', async () => {
     let calls = 0
     global.fetch = async () => {
       calls++
       return { ok: false, status: 400, text: async () => 'context_length exceeded' }
     }
-    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.FLASH })).rejects.toThrow(DeepSeekContextoExcedidoError)
+    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELS.FLASH })).rejects.toThrow(DeepSeekContextExceededError)
     expect(calls).toBe(1)
   })
 

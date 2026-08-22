@@ -1,6 +1,6 @@
 import { AIError, HTTPError, TimeoutError, StreamingNotSupportedError } from '../errors.js'
 import { resolveLogger } from '../logger.js'
-import { createClasificarFallo } from '../retry.js'
+import { createClassifyFailure } from '../retry.js'
 import { ContextExceededError } from '../errors.js'
 
 // Muse Spark via fetch — OpenAI-compatible endpoint (Meta protocol : https://dev.meta.ai/docs/protocols )
@@ -18,19 +18,19 @@ export const MAX_TOKENS_MUSE = {
   'muse-spark-1.2-contributor': 4096
 }
 
-export const TOPE_MUSE_DEFECTO = 4000
+export const MUSE_FALLBACK_MAX_TOKENS = 4000
 
 export const DEFAULT_TIMEOUT_MUSE = 120_000
 
-export const topeMuse = (maxTokens, model) => maxTokens ?? MAX_TOKENS_MUSE[model] ?? TOPE_MUSE_DEFECTO
+export const resolveMuseMaxTokens = (maxTokens, model) => maxTokens ?? MAX_TOKENS_MUSE[model] ?? MUSE_FALLBACK_MAX_TOKENS
 
-export const MAX_INTENTOS_MUSE = 3
-export const ESPERA_BASE_MUSE = 1000
+export const MUSE_MAX_RETRIES = 3
+export const MUSE_BASE_RETRY_DELAY_MS = 1000
 
-export const esTransitorioMuse = status => status === 429 || status >= 500
+export const isTransientMuse = status => status === 429 || status >= 500
 
-export const esContextoExcedidoMuse = (status, cuerpo = '') =>
-  status === 400 && /context length|context_length|maximum context|too long|too many tokens|input.*too.*long/i.test(cuerpo)
+export const isContextExceededMuse = (status, body = '') =>
+  status === 400 && /context length|context_length|maximum context|too long|too many tokens|input.*too.*long/i.test(body)
 
 export const parseUsageMuse = (usage = {}) => {
   const u = usage || {}
@@ -41,28 +41,28 @@ export const parseUsageMuse = (usage = {}) => {
   return { promptTokens, completionTokens, totalTokens: total }
 }
 
-export const clasificarFalloMuse = createClasificarFallo({
-  esTransitorio: esTransitorioMuse,
-  esContextoExcedido: esContextoExcedidoMuse,
-  MAX_INTENTOS: MAX_INTENTOS_MUSE,
-  ESPERA_BASE_MS: ESPERA_BASE_MUSE,
+export const classifyMuseFailure = createClassifyFailure({
+  isTransient: isTransientMuse,
+  isContextExceeded: isContextExceededMuse,
+  MAX_RETRIES: MUSE_MAX_RETRIES,
+  BASE_RETRY_DELAY_MS: MUSE_BASE_RETRY_DELAY_MS,
   provider: 'muse',
   ContextError: ContextExceededError
 })
 
-async function executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, intentos, includeRaw }) {
+async function executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, retries, includeRaw }) {
   const log = resolveLogger(logger)
   const apiKey = (process.env.MUSE_API_KEY ?? process.env.MUSE_CONTRIBUTOR_TOKEN ?? '').trim()
   if (!apiKey) {
     log.warn('MOT-AI-010', 'MUSE_API_KEY / MUSE_CONTRIBUTOR_TOKEN no está configurada')
     throw new AIError('El servicio de IA no se encuentra configurado (falta la clave API de Muse)', { provider: 'muse', code: 'MOT-AI-010' })
   }
-  const tope = topeMuse(maxTokens, model)
+  const maxTokensLimit = resolveMuseMaxTokens(maxTokens, model)
   const payload = {
     model,
     messages,
     temperature,
-    max_tokens: tope,
+    max_tokens: maxTokensLimit,
     ...(topP != null ? { top_p: topP } : {}),
     ...(topK != null ? { top_k: topK } : {}),
     ...(presencePenalty != null ? { presence_penalty: presencePenalty } : {}),
@@ -80,8 +80,8 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
       body: JSON.stringify(payload)
     })
     if (!response.ok) {
-      const reintentar = await clasificarFalloMuse(response, intentos, log)
-      return executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, intentos: reintentar, includeRaw })
+      const retry = await classifyMuseFailure(response, retries, log)
+      return executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, retries: retry, includeRaw })
     }
     let result
     try {
@@ -107,7 +107,7 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
     if (err instanceof ContextExceededError) throw err
     if (err.name === 'AbortError') {
       log.error('MOT-AI-012', 'Timeout consultando Muse', { timeoutMs: signal ? undefined : DEFAULT_TIMEOUT_MUSE })
-      throw new TimeoutError('Tiempo de espera agotado al consultar Muse', { provider: 'muse', cause: err })
+      throw new TimeoutError('Tiempo de delay agotado al consultar Muse', { provider: 'muse', cause: err })
     }
     log.error('MOT-AI-012', 'Excepción al consultar Muse', { error: err.message })
     throw err
@@ -141,11 +141,11 @@ export async function callMuse({
   }
   const signal = controller.signal
   try {
-    return await executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, intentos: MAX_INTENTOS_MUSE, includeRaw })
+    return await executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, retries: MUSE_MAX_RETRIES, includeRaw })
   } catch (err) {
     if (err.name === 'AbortError') {
       log.error('MOT-AI-012', 'Timeout consultando Muse', { timeoutMs })
-      throw new TimeoutError(`Tiempo de espera agotado al consultar Muse (${timeoutMs / 1000}s)`, { provider: 'muse', timeoutMs, cause: err })
+      throw new TimeoutError(`Tiempo de delay agotado al consultar Muse (${timeoutMs / 1000}s)`, { provider: 'muse', timeoutMs, cause: err })
     }
     throw err
   } finally {
@@ -163,7 +163,7 @@ export const museProvider = {
     const log = resolveLogger(logger)
     const merged = {
       temperature: config.temperature ?? 0.3,
-      maxTokens: config.maxTokens ?? MAX_TOKENS_MUSE[model] ?? TOPE_MUSE_DEFECTO,
+      maxTokens: config.maxTokens ?? MAX_TOKENS_MUSE[model] ?? MUSE_FALLBACK_MAX_TOKENS,
       timeoutMs: config.timeoutMs ?? DEFAULT_TIMEOUT_MUSE,
       includeRaw: config.includeRaw ?? false,
       topP: config.topP ?? null,
@@ -190,12 +190,12 @@ export const museProvider = {
         userId,
         signal,
         logger: log,
-        intentos: MAX_INTENTOS_MUSE,
+        retries: MUSE_MAX_RETRIES,
         includeRaw: merged.includeRaw
       }).catch(err => {
         if (err.name === 'AbortError') {
           log.error('MOT-AI-012', 'Timeout consultando Muse', { timeoutMs: merged.timeoutMs })
-          throw new TimeoutError(`Tiempo de espera agotado al consultar Muse (${merged.timeoutMs / 1000}s)`, { provider: 'muse', timeoutMs: merged.timeoutMs, cause: err })
+          throw new TimeoutError(`Tiempo de delay agotado al consultar Muse (${merged.timeoutMs / 1000}s)`, { provider: 'muse', timeoutMs: merged.timeoutMs, cause: err })
         }
         throw err
       })

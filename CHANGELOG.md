@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.5 — 2026-08-21
+- Clean: evita Spanglish en variables — `TOPE_POR_DEFECTO`→`FALLBACK_MAX_TOKENS`, `topeDeRespuesta`→`resolveMaxTokens`, `esTransitorio`→`isTransient`, `esContextoExcedido`→`isContextExceeded`, `clasificarFallo`→`classifyFailure`, `ESPERA_BASE_MS`→`BASE_RETRY_DELAY_MS`, `MAX_INTENTOS`→`MAX_RETRIES`, `DeepSeekContextoExcedidoError`→`DeepSeekContextExceededError` (mismos para Muse). Comentarios y explicaciones siguen en español.
+
 ## 0.1.4 — 2026-08-21
 - Refactor: extrae `src/retry.js` helper reutilizable `createClasificarFallo` para DeepSeek y Muse (mismo backoff 3×1s/2s, MOT-AI-011/013/014), cada adapter mantiene su `esTransitorio`/`esContextoExcedido`/`parseUsage`/`MAX_TOKENS`
 
@@ -18,9 +21,9 @@
 
 ## 0.1.0 — 2026-08-21
 - Initial release: callAI({messages|prompts, model, config, userId, provider?}) → NormalizedResult
-- Adapter DeepSeek (port fiel de bookingAPI/src/util/deepseekClient.js) — MODELS.FLASH/PRO, MAX_TOKENS 6000/8000/fallback 4000, DEFAULT_TIMEOUT_MS 180_000, AbortController, reintentos 429/5xx con backoff ESPERA_BASE_MS*(MAX_INTENTOS - intentos +1), DeepSeekContextoExcedidoError, parseUsage normalizado
+- Adapter DeepSeek (port fiel de bookingAPI/src/util/deepseekClient.js) — MODELS.FLASH/PRO, MAX_TOKENS 6000/8000/fallback 4000, DEFAULT_TIMEOUT_MS 180_000, AbortController, reintentos 429/5xx con backoff ESPERA_BASE_MS*(MAX_INTENTOS - intentos +1), DeepSeekContextExceededError, parseUsage normalizado
 - Adapter Muse Spark (stub, contrato definido) — MUSE_MODELS.SPARK, soporta MUSE_API_KEY || MUSE_CONTRIBUTOR_TOKEN, stub accionable sin fetch
-- Registry, error taxonomy MOT-AI-01x (AIError, ContextExceededError, DeepSeekContextoExcedidoError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError, StreamingNotSupportedError), credential isolation trim() fail-fast
+- Registry, error taxonomy MOT-AI-01x (AIError, ContextExceededError, DeepSeekContextExceededError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError, StreamingNotSupportedError), credential isolation trim() fail-fast
 - Config defaults centralizados applyDefaults
 - ESM, Node >=18, GitHub Packages @cachac, exports explícito
 - Streaming: capítulo investigado (SSE vs chunked vs ReadableStream, Hono/Express/Nuxt proxy), stub StreamingNotSupportedError, firma Chunk y callAI.stream()

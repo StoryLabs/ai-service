@@ -97,14 +97,14 @@ const { content, usage } = await callDeepSeek({ messages, model: MODELS.PRO, tem
 ### Error handling
 
 ```js
-import { callAI, MODELS, AIError, ContextExceededError, DeepSeekContextoExcedidoError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@cachac/ai-service'
+import { callAI, MODELS, AIError, ContextExceededError, DeepSeekContextExceededError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@cachac/ai-service'
 
 try {
   await callAI({ messages, model: 'unknown-model' })
 } catch (e) {
   if (e instanceof UnknownModelError) console.error(e.model, e.code) // MOT-AI-016
   if (e instanceof ProviderNotRegisteredError) console.error(e.provider) // MOT-AI-017
-  if (e instanceof DeepSeekContextoExcedidoError) console.error('context exceeded', e instanceof ContextExceededError) // true
+  if (e instanceof DeepSeekContextExceededError) console.error('context exceeded', e instanceof ContextExceededError) // true
   if (e instanceof TimeoutError) console.error('timeout', e.code) // MOT-AI-012
   if (e instanceof HTTPError) console.error(e.status, e.body) // MOT-AI-011
   if (e instanceof AIError) console.error(e.code, e.provider)

@@ -15,10 +15,10 @@ export class ContextExceededError extends AIError {
   }
 }
 
-export class DeepSeekContextoExcedidoError extends ContextExceededError {
+export class DeepSeekContextExceededError extends ContextExceededError {
   constructor(message, opts = {}) {
     super(message, { provider: 'deepseek', ...opts })
-    this.name = 'DeepSeekContextoExcedidoError'
+    this.name = 'DeepSeekContextExceededError'
   }
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'bun:test'
 import {
   AIError,
   ContextExceededError,
-  DeepSeekContextoExcedidoError,
+  DeepSeekContextExceededError,
   TimeoutError,
   UnknownModelError,
   ProviderNotRegisteredError,
@@ -11,12 +11,12 @@ import {
 } from '../../src/errors.js'
 
 describe('errors hierarchy', () => {
-  it('DeepSeekContextoExcedidoError instanceof ContextExceededError', () => {
-    const e = new DeepSeekContextoExcedidoError()
+  it('DeepSeekContextExceededError instanceof ContextExceededError', () => {
+    const e = new DeepSeekContextExceededError()
     expect(e).toBeInstanceOf(ContextExceededError)
     expect(e).toBeInstanceOf(AIError)
     expect(e).toBeInstanceOf(Error)
-    expect(e.name).toBe('DeepSeekContextoExcedidoError')
+    expect(e.name).toBe('DeepSeekContextExceededError')
     expect(e.code).toBe('MOT-AI-013')
     expect(e.provider).toBe('deepseek')
   })

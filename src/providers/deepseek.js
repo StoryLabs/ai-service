@@ -1,6 +1,6 @@
-import { AIError, DeepSeekContextoExcedidoError as BaseDeepSeekError, HTTPError, TimeoutError, StreamingNotSupportedError } from '../errors.js'
+import { AIError, DeepSeekContextExceededError as BaseDeepSeekError, HTTPError, TimeoutError, StreamingNotSupportedError } from '../errors.js'
 import { resolveLogger } from '../logger.js'
-import { createClasificarFallo } from '../retry.js'
+import { createClassifyFailure } from '../retry.js'
 
 export const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 
@@ -22,20 +22,20 @@ export const MAX_TOKENS = {
   [MODELS.PRO]: 8000
 }
 
-export const TOPE_POR_DEFECTO = 4000
+export const FALLBACK_MAX_TOKENS = 4000
 
-export const topeDeRespuesta = (maxTokens, model) => maxTokens ?? MAX_TOKENS[model] ?? TOPE_POR_DEFECTO
+export const resolveMaxTokens = (maxTokens, model) => maxTokens ?? MAX_TOKENS[model] ?? FALLBACK_MAX_TOKENS
 
-export const MAX_INTENTOS = 3
-export const ESPERA_BASE_MS = 1000
+export const MAX_RETRIES = 3
+export const BASE_RETRY_DELAY_MS = 1000
 
-export const esTransitorio = status => status === 429 || status >= 500
+export const isTransient = status => status === 429 || status >= 500
 
-export const esContextoExcedido = (status, cuerpo = '') =>
-  status === 400 && /context length|context_length|maximum context|too long|too many tokens/i.test(cuerpo)
+export const isContextExceeded = (status, body = '') =>
+  status === 400 && /context length|context_length|maximum context|too long|too many tokens/i.test(body)
 
-// Re-export for compat — instanceof DeepSeekContextoExcedidoError should work via errors.js
-export { BaseDeepSeekError as DeepSeekContextoExcedidoError }
+// Re-export for compat — instanceof DeepSeekContextExceededError should work via errors.js
+export { BaseDeepSeekError as DeepSeekContextExceededError }
 
 export const parseUsage = (usage = {}) => {
   const u = usage || {}
@@ -48,11 +48,11 @@ export const parseUsage = (usage = {}) => {
   }
 }
 
-export const clasificarFallo = createClasificarFallo({
-  esTransitorio,
-  esContextoExcedido,
-  MAX_INTENTOS,
-  ESPERA_BASE_MS,
+export const classifyFailure = createClassifyFailure({
+  isTransient,
+  isContextExceeded,
+  MAX_RETRIES,
+  BASE_RETRY_DELAY_MS,
   provider: 'deepseek',
   ContextError: BaseDeepSeekError
 })
@@ -61,7 +61,7 @@ export const clasificarFallo = createClasificarFallo({
  * Internal helper that does the fetch and normalizes to NormalizedResult.
  * Accepts already-resolved config fields.
  */
-async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, intentos, includeRaw }) {
+async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, retries, includeRaw }) {
   const log = resolveLogger(logger)
 
   const apiKey = (process.env.DEEPSEEK_API_KEY ?? '').trim()
@@ -74,13 +74,13 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
     })
   }
 
-  const tope = topeDeRespuesta(maxTokens, model)
+  const maxTokensLimit = resolveMaxTokens(maxTokens, model)
 
   const payload = {
     model,
     messages,
     temperature,
-    max_tokens: tope,
+    max_tokens: maxTokensLimit,
     ...(topP != null ? { top_p: topP } : {}),
     ...(topK != null ? { top_k: topK } : {}),
     ...(presencePenalty != null ? { presence_penalty: presencePenalty } : {}),
@@ -103,8 +103,8 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
     })
 
     if (!response.ok) {
-      const reintentar = await clasificarFallo(response, intentos, log)
-      return executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, intentos: reintentar, includeRaw })
+      const retry = await classifyFailure(response, retries, log)
+      return executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, retries: retry, includeRaw })
     }
 
     let result
@@ -135,7 +135,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
     if (err instanceof BaseDeepSeekError || err instanceof HTTPError || err instanceof AIError) throw err
     if (err.name === 'AbortError') {
       log.error('MOT-AI-012', 'Timeout consultando DeepSeek', { timeoutMs: signal ? undefined : DEFAULT_TIMEOUT_MS })
-      throw new TimeoutError(`Tiempo de espera agotado al consultar DeepSeek`, {
+      throw new TimeoutError(`Tiempo de delay agotado al consultar DeepSeek`, {
         provider: 'deepseek',
         cause: err
       })
@@ -147,7 +147,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
 
 /**
  * Cliente HTTP para DeepSeek — port fiel de bookingAPI/src/util/deepseekClient.js
- * Firma legacy preservada para compat: callDeepSeek({ messages, model, temperature, maxTokens, userId, timeoutMs, intentos, signal, logger })
+ * Firma legacy preservada para compat: callDeepSeek({ messages, model, temperature, maxTokens, userId, timeoutMs, retries, signal, logger })
  */
 export const callDeepSeek = async ({
   messages,
@@ -163,7 +163,7 @@ export const callDeepSeek = async ({
   responseFormat = null,
   userId = null,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-  intentos = MAX_INTENTOS,
+  retries = MAX_RETRIES,
   signal: callerSignal,
   logger: callerLogger,
   includeRaw = false
@@ -195,14 +195,14 @@ export const callDeepSeek = async ({
       userId,
       signal,
       logger: log,
-      intentos,
+      retries,
       includeRaw
     })
     return result
   } catch (err) {
     if (err.name === 'AbortError') {
       log.error('MOT-AI-012', 'Timeout consultando DeepSeek', { timeoutMs })
-      throw new TimeoutError(`Tiempo de espera agotado al consultar DeepSeek (${timeoutMs / 1000}s)`, {
+      throw new TimeoutError(`Tiempo de delay agotado al consultar DeepSeek (${timeoutMs / 1000}s)`, {
         provider: 'deepseek',
         timeoutMs,
         cause: err
@@ -256,12 +256,12 @@ export const deepseekProvider = {
         userId,
         signal,
         logger: log,
-        intentos: MAX_INTENTOS,
+        retries: MAX_RETRIES,
         includeRaw: merged.includeRaw
       }).catch(err => {
         if (err.name === 'AbortError') {
           log.error('MOT-AI-012', 'Timeout consultando DeepSeek', { timeoutMs: merged.timeoutMs })
-          throw new TimeoutError(`Tiempo de espera agotado al consultar DeepSeek (${merged.timeoutMs / 1000}s)`, {
+          throw new TimeoutError(`Tiempo de delay agotado al consultar DeepSeek (${merged.timeoutMs / 1000}s)`, {
             provider: 'deepseek',
             timeoutMs: merged.timeoutMs,
             cause: err

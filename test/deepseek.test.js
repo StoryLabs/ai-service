@@ -2,18 +2,18 @@ const mockLoggerDeep = { warn: () => {}, error: () => {}, info: () => {}, debug:
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import {
   parseUsage,
-  esTransitorio,
-  esContextoExcedido,
-  clasificarFallo,
-  topeDeRespuesta,
+  isTransient,
+  isContextExceeded,
+  classifyFailure,
+  resolveMaxTokens,
   MAX_TOKENS,
   MODELS,
-  TOPE_POR_DEFECTO,
+  FALLBACK_MAX_TOKENS,
   DEFAULT_TIMEOUT_MS,
-  MAX_INTENTOS,
-  ESPERA_BASE_MS,
+  MAX_RETRIES,
+  BASE_RETRY_DELAY_MS,
   callDeepSeek,
-  DeepSeekContextoExcedidoError
+  DeepSeekContextExceededError
 } from '../src/providers/deepseek.js'
 import { AIError, HTTPError, TimeoutError, ContextExceededError } from '../src/errors.js'
 
@@ -36,7 +36,7 @@ describe('parseUsage', () => {
   })
 })
 
-describe('esContextoExcedido', () => {
+describe('isContextExceeded', () => {
   const cases = [
     'context length exceeded',
     'context_length exceeded',
@@ -48,45 +48,45 @@ describe('esContextoExcedido', () => {
   ]
   for (const body of cases) {
     it(`detecta "${body}" con 400`, () => {
-      expect(esContextoExcedido(400, body)).toBe(true)
+      expect(isContextExceeded(400, body)).toBe(true)
     })
   }
   it('no detecta con status !=400', () => {
-    expect(esContextoExcedido(429, 'context length')).toBe(false)
-    expect(esContextoExcedido(500, 'too many tokens')).toBe(false)
+    expect(isContextExceeded(429, 'context length')).toBe(false)
+    expect(isContextExceeded(500, 'too many tokens')).toBe(false)
   })
   it('no detecta 400 sin regex', () => {
-    expect(esContextoExcedido(400, 'invalid api key')).toBe(false)
-    expect(esContextoExcedido(400, '')).toBe(false)
+    expect(isContextExceeded(400, 'invalid api key')).toBe(false)
+    expect(isContextExceeded(400, '')).toBe(false)
   })
 })
 
-describe('esTransitorio', () => {
+describe('isTransient', () => {
   it('true para 429 y >=500', () => {
-    expect(esTransitorio(429)).toBe(true)
-    expect(esTransitorio(500)).toBe(true)
-    expect(esTransitorio(503)).toBe(true)
+    expect(isTransient(429)).toBe(true)
+    expect(isTransient(500)).toBe(true)
+    expect(isTransient(503)).toBe(true)
   })
   it('false para otros', () => {
-    expect(esTransitorio(400)).toBe(false)
-    expect(esTransitorio(401)).toBe(false)
-    expect(esTransitorio(404)).toBe(false)
+    expect(isTransient(400)).toBe(false)
+    expect(isTransient(401)).toBe(false)
+    expect(isTransient(404)).toBe(false)
   })
 })
 
-describe('topeDeRespuesta', () => {
+describe('resolveMaxTokens', () => {
   it('retorna MAX_TOKENS por modelo cuando maxTokens null', () => {
-    expect(topeDeRespuesta(null, MODELS.FLASH)).toBe(6000)
-    expect(topeDeRespuesta(undefined, MODELS.PRO)).toBe(8000)
+    expect(resolveMaxTokens(null, MODELS.FLASH)).toBe(6000)
+    expect(resolveMaxTokens(undefined, MODELS.PRO)).toBe(8000)
   })
   it('respeta maxTokens explícito', () => {
-    expect(topeDeRespuesta(1234, MODELS.FLASH)).toBe(1234)
-    expect(topeDeRespuesta(0, MODELS.PRO)).toBe(0)
+    expect(resolveMaxTokens(1234, MODELS.FLASH)).toBe(1234)
+    expect(resolveMaxTokens(0, MODELS.PRO)).toBe(0)
   })
   it('fallback 4000 para modelo no tabulado', () => {
-    expect(topeDeRespuesta(null, 'deepseek-unknown')).toBe(4000)
-    expect(topeDeRespuesta(undefined, 'muse-spark-1.2-contributor')).toBe(4000)
-    expect(topeDeRespuesta(null, 'unknown')).toBe(TOPE_POR_DEFECTO)
+    expect(resolveMaxTokens(null, 'deepseek-unknown')).toBe(4000)
+    expect(resolveMaxTokens(undefined, 'muse-spark-1.2-contributor')).toBe(4000)
+    expect(resolveMaxTokens(null, 'unknown')).toBe(FALLBACK_MAX_TOKENS)
   })
 })
 
@@ -102,18 +102,18 @@ describe('constantes', () => {
   it('DEFAULT_TIMEOUT_MS 180_000', () => {
     expect(DEFAULT_TIMEOUT_MS).toBe(180_000)
   })
-  it('MAX_INTENTOS 3 y ESPERA_BASE_MS 1000', () => {
-    expect(MAX_INTENTOS).toBe(3)
-    expect(ESPERA_BASE_MS).toBe(1000)
+  it('MAX_RETRIES 3 y BASE_RETRY_DELAY_MS 1000', () => {
+    expect(MAX_RETRIES).toBe(3)
+    expect(BASE_RETRY_DELAY_MS).toBe(1000)
   })
 })
 
-describe('clasificarFallo', () => {
+describe('classifyFailure', () => {
   function mockResponse(status, body) {
     return { status, text: async () => body }
   }
 
-  it('400 + context length → DeepSeekContextoExcedidoError sin reintento, MOT-AI-013', async () => {
+  it('400 + context length → DeepSeekContextExceededError sin reintento, MOT-AI-013', async () => {
     const logger = { warn: () => {}, error: () => {} }
     let warned = null
     logger.warn = code => {
@@ -122,34 +122,34 @@ describe('clasificarFallo', () => {
     const resp = mockResponse(400, 'context_length exceeded limit')
     let caught
     try {
-      await clasificarFallo(resp, 3, logger)
+      await classifyFailure(resp, 3, logger)
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
     }
-    expect(caught).toBeInstanceOf(DeepSeekContextoExcedidoError)
+    expect(caught).toBeInstanceOf(DeepSeekContextExceededError)
     expect(caught).toBeInstanceOf(ContextExceededError)
-    expect(caught.name).toBe('DeepSeekContextoExcedidoError')
+    expect(caught.name).toBe('DeepSeekContextExceededError')
     expect(warned).toBe('MOT-AI-013')
   })
 
-  it('429 con intentos>1 → espera 1s y retorna intentos-1, MOT-AI-014', async () => {
+  it('429 con retries>1 → delay 1s y retorna retries-1, MOT-AI-014', async () => {
     const calls = []
     const logger = { warn: (c, _m, ctx) => calls.push({ c, ctx }), error: () => {} }
     const resp = mockResponse(429, 'rate limited')
     const start = Date.now()
-    const remaining = await clasificarFallo(resp, 3, logger)
+    const remaining = await classifyFailure(resp, 3, logger)
     const elapsed = Date.now() - start
     expect(remaining).toBe(2)
     expect(calls[0].c).toBe('MOT-AI-014')
     expect(elapsed >= 900).toBe(true)
   })
 
-  it('500 con intentos=2 → espera 2s', async () => {
+  it('500 con retries=2 → delay 2s', async () => {
     const logger = { warn: () => {}, error: () => {} }
     const resp = mockResponse(500, 'internal error')
     const start = Date.now()
-    const remaining = await clasificarFallo(resp, 2, logger)
+    const remaining = await classifyFailure(resp, 2, logger)
     const elapsed = Date.now() - start
     expect(remaining).toBe(1)
     expect(elapsed >= 1900).toBe(true)
@@ -166,7 +166,7 @@ describe('clasificarFallo', () => {
     const resp = mockResponse(400, 'invalid api key')
     let caught
     try {
-      await clasificarFallo(resp, 3, logger)
+      await classifyFailure(resp, 3, logger)
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -180,19 +180,19 @@ describe('clasificarFallo', () => {
   it('401 → HTTPError sin reintento', async () => {
     const logger = { warn: () => {}, error: () => {} }
     const resp = mockResponse(401, 'unauthorized')
-    await expect(clasificarFallo(resp, 3, logger)).rejects.toThrow(HTTPError)
+    await expect(classifyFailure(resp, 3, logger)).rejects.toThrow(HTTPError)
   })
 
-  it('429 con intentos=1 agotado → HTTPError final', async () => {
+  it('429 con retries=1 agotado → HTTPError final', async () => {
     const logger = { warn: () => {}, error: () => {} }
     const resp = mockResponse(429, 'rate limited')
-    await expect(clasificarFallo(resp, 1, logger)).rejects.toThrow(HTTPError)
+    await expect(classifyFailure(resp, 1, logger)).rejects.toThrow(HTTPError)
   })
 
-  it('500 con intentos=1 agotado → HTTPError', async () => {
+  it('500 con retries=1 agotado → HTTPError', async () => {
     const logger = { warn: () => {}, error: () => {} }
     const resp = mockResponse(500, 'server error')
-    await expect(clasificarFallo(resp, 1, logger)).rejects.toThrow(HTTPError)
+    await expect(classifyFailure(resp, 1, logger)).rejects.toThrow(HTTPError)
   })
 })
 
