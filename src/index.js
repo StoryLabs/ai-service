@@ -26,8 +26,7 @@ register(museProvider)
 setModelTable({
   [DeepSeekModels.FLASH]: 'deepseek',
   [DeepSeekModels.PRO]: 'deepseek',
-  [MUSE_MODELS.SPARK]: 'muse',
-  'muse-spark-1.2-contributor': 'muse'
+  [MUSE_MODELS.SPARK]: 'muse'
 })
 
 export const MODELS = DeepSeekModels
