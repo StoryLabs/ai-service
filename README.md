@@ -11,9 +11,9 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 # @cachac:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @cachac/ai-service@^0.1.4
+pnpm add @cachac/ai-service@^0.1.6
 # or
-npm install @cachac/ai-service@^0.1.4
+npm install @cachac/ai-service@^0.1.6
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.
@@ -253,5 +253,5 @@ ISC
 ## How to upload the package
 ```bash
 git add . && git commit -m "new version" && git push
-gh release create v0.1.0 --title v0.1.0 --notes "new version"
+gh release create v0.1.5 --title v0.1.5 --notes "new version"
 ```

@@ -30,7 +30,6 @@ export const DEFAULTS = {
     temperature: 0.3,
     timeoutMs: 120_000,
     maxTokensByModel: {
-      'LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU': 4096,
       'muse-spark-1.2-contributor': 4096
     },
     fallbackMaxTokens: 4000,

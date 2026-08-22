@@ -7,7 +7,7 @@ import { ContextExceededError } from '../errors.js'
 export const MUSE_URL = 'https://api.muse.example.com/v1/chat/completions'
 
 export const MUSE_MODELS = {
-  SPARK: 'LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU'
+  SPARK: 'muse-spark-1.2-contributor'
 }
 
 // keep backward alias for tests/docs that still reference old id
@@ -157,7 +157,7 @@ export const museProvider = {
   name: 'muse',
   models: Object.values(MUSE_MODELS),
   supports(model) {
-    return model.startsWith('muse-') || model === MUSE_MODELS.SPARK || model === 'LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU' || this.models.includes(model)
+    return model.startsWith('muse-') || model === MUSE_MODELS.SPARK || this.models.includes(model)
   },
   async complete({ messages, model, config = {}, userId, signal, logger }) {
     const log = resolveLogger(logger)

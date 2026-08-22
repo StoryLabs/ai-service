@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.6 — 2026-08-21
+- Fix: `MUSE_MODELS.SPARK` vuelve a `'muse-spark-1.2-contributor'` (modelo real), `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` es `MUSE_API_KEY` (credencial, no modelo) — corrige payload `model`
+
 ## 0.1.5 — 2026-08-21
 - Clean: evita Spanglish en variables — `TOPE_POR_DEFECTO`→`FALLBACK_MAX_TOKENS`, `topeDeRespuesta`→`resolveMaxTokens`, `esTransitorio`→`isTransient`, `esContextoExcedido`→`isContextExceeded`, `clasificarFallo`→`classifyFailure`, `ESPERA_BASE_MS`→`BASE_RETRY_DELAY_MS`, `MAX_INTENTOS`→`MAX_RETRIES`, `DeepSeekContextoExcedidoError`→`DeepSeekContextExceededError` (mismos para Muse). Comentarios y explicaciones siguen en español.
 
