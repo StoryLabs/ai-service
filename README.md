@@ -11,9 +11,9 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 # @cachac:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @cachac/ai-service@^0.1.0
+pnpm add @cachac/ai-service@^0.1.1
 # or
-npm install @cachac/ai-service@^0.1.0
+npm install @cachac/ai-service@^0.1.1
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.
@@ -23,7 +23,7 @@ Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Pack
 | Provider | Var | Required | Notes |
 |----------|-----|----------|-------|
 | DeepSeek | `DEEPSEEK_API_KEY` | yes for `deepseek-*` | `trim()` applied, read inside adapter only |
-| Muse Spark | `MUSE_API_KEY` or `MUSE_CONTRIBUTOR_TOKEN` | yes for `muse-*` | `trim()`, fallback `||`, TBD endpoint — stub in 0.1.0 |
+| Muse Spark | `MUSE_API_KEY` or `MUSE_CONTRIBUTOR_TOKEN` | yes for `muse-*` | `trim()`, fallback `||`, fetch POST https://api.muse.example.com/v1/chat/completions |
 
 Each adapter reads **its own env var**, isolated. Rotating one key doesn't affect the other. Keys are never returned in results, errors or logs. Missing key fails fast with `MOT-AI-010` without `fetch`.
 
@@ -35,7 +35,7 @@ Each adapter reads **its own env var**, isolated. Rotating one key doesn't affec
 |-----|------------------|----------|-------------------|-----------------|
 | `MODELOS.NORMAL` | `deepseek-v4-flash` | `deepseek` | 6000 | 180_000 ms |
 | `MODELOS.PRO` | `deepseek-v4-pro` | `deepseek` | 8000 | 180_000 ms |
-| `MODELOS_MUSE.SPARK` | `muse-spark-1.2-contributor` | `muse` | 4096 | 120_000 ms |
+| `MODELOS_MUSE.SPARK` | `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` (`muse-spark-1.2-contributor` alias) | `muse` | 4096 | 120_000 ms |
 | fallback | any `deepseek-*` | `deepseek` | 4000 | 180_000 ms |
 | fallback | any `muse-*` | `muse` | 4000 | 120_000 ms |
 
@@ -119,8 +119,9 @@ Never leaks credentials: errors, logs and `NormalizedResult` never contain the A
 config: { temperature?, maxTokens?, timeoutMs?, includeRaw? }
 ```
 
-- `temperature` 0..2, default per provider (DeepSeek 0.2, Muse 0.3)
+- `temperature` 0..2, default per provider (DeepSeek 0.2, Muse 0.3) — validación estricta MOT-AI-016 si fuera de rango
 - `maxTokens` techo (no objetivo) per model: `MAX_TOKENS[model] ?? 4000`. Explicit `config.maxTokens` prevalece. A low ceiling only truncates — no error.
+- `topP` 0..1, `topK` integer >=1, `presencePenalty` -2..2, `frequencyPenalty` -2..2, `stop` string|string[], `seed` integer, `responseFormat` object — todos parametrizables desde cliente, validación estricta MOT-AI-016, solo se envían si no-null
 - `timeoutMs` per provider (DeepSeek 180_000, Muse 120_000). `config.timeoutMs` explicit prevalece.
 - `includeRaw` boolean, default false — if true, `NormalizedResult.raw` contains provider raw response.
 
@@ -203,7 +204,7 @@ register(openaiProvider) // ahora callAI resuelve 'openai-*' sin tocar callers
 
 ## Logger
 
-Inyectable con fallback a `console`. Host puede pasar su logger construido con `@cachac/storylabs-logger`:
+REQUERIDO desde v0.1.1 — sin fallback a `console`. Host DEBE pasar su logger construido con `@cachac/storylabs-logger` (o `{warn,error,info}`) via `callAI({logger})`, si no lanza `MOT-AI-010`.:
 
 ```js
 import { makeLogger } from '@cachac/storylabs-logger'
@@ -252,5 +253,5 @@ ISC
 ## How to upload the package
 ```bash
 git add . && git commit -m "new version" && git push
-gh release create v0.1.3 --title v0.1.3 --notes "new version"
+gh release create v0.1.0 --title v0.1.0 --notes "new version"
 ```

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI } from '../../src/index.js'
 import { AIError, StreamingNotSupportedError } from '../../src/errors.js'
 import { museProvider, MUSE_MODELS } from '../../src/providers/muse.js'
+const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
 describe('muse stub', () => {
   let origFetch
@@ -25,7 +26,7 @@ describe('muse stub', () => {
     delete process.env.MUSE_CONTRIBUTOR_TOKEN
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -34,31 +35,26 @@ describe('muse stub', () => {
     expect(caught.code).toBe('MOT-AI-010')
   })
 
-  it('con env var pero stub → AIError actionable', async () => {
+  it('con env var → fetch success (muse real)', async () => {
     process.env.MUSE_API_KEY = 'sk-muse'
-    let caught
-    try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
-      throw new Error('should have thrown')
-    } catch (err) {
-      caught = err
-    }
-    expect(caught).toBeInstanceOf(AIError)
-    expect(caught.message).toMatch(/Muse Spark/)
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok muse' }, finish_reason: 'stop' }], usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 } })
+    })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+    expect(res.content).toBe('ok muse')
+    expect(res.provider).toBe('muse')
   })
 
-  it('MUSE_CONTRIBUTOR_TOKEN fallback works (considera configurado)', async () => {
+  it('MUSE_CONTRIBUTOR_TOKEN fallback works (fetch success)', async () => {
     process.env.MUSE_CONTRIBUTOR_TOKEN = 'tok'
-    let caught
-    try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
-      throw new Error('should have thrown')
-    } catch (err) {
-      caught = err
-    }
-    expect(caught.message).toMatch(/Muse Spark/)
-    expect(caught.code).toBe('MOT-AI-010')
-    expect(caught.provider).toBe('muse')
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok via token' } }], usage: { input_tokens: 1, output_tokens: 1 } })
+    })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+    expect(res.content).toBe('ok via token')
+    expect(res.usage.promptTokens).toBe(1)
   })
 
   it('stream siempre lanza StreamingNotSupportedError', async () => {
@@ -78,6 +74,6 @@ describe('muse stub', () => {
   // TODO: habilitar con MUSE_API_KEY real y endpoint confirmado
   it.skip('integration real con MUSE_API_KEY (TODO)', async () => {
     process.env.MUSE_API_KEY = process.env.MUSE_API_KEY || 'real'
-    // await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+    // await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
   })
 })

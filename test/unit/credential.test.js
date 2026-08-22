@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI, MODELOS } from '../../src/index.js'
 import { AIError } from '../../src/errors.js'
+const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
 describe('credential isolation', () => {
   let origFetch
@@ -21,7 +22,7 @@ describe('credential isolation', () => {
     }
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -34,14 +35,14 @@ describe('credential isolation', () => {
   it('con espacios trim pasa', async () => {
     process.env.DEEPSEEK_API_KEY = '  secret  '
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} }) })
-    const r = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(r.content).toBe('ok')
   })
 
   it('key nunca en retorno ni error', async () => {
     process.env.DEEPSEEK_API_KEY = 'sk-never-leak'
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'hi' } }], usage: {} }) })
-    const r = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(JSON.stringify(r).includes('sk-never-leak')).toBe(false)
   })
 })

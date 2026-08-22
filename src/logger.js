@@ -1,14 +1,8 @@
-const fallbackLogger = {
-  warn: (code, msg, ctx) => console.warn(`[ai-service] ${code}: ${msg}`, ctx ?? ''),
-  error: (code, msg, ctx) => console.error(`[ai-service] ${code}: ${msg}`, ctx ?? ''),
-  info: (code, msg, ctx) => console.info(`[ai-service] ${code}: ${msg}`, ctx ?? ''),
-  debug: (code, msg, ctx) => console.debug(`[ai-service] ${code}: ${msg}`, ctx ?? '')
-}
+import { AIError } from './errors.js'
 
 export function resolveLogger(callerLogger) {
   if (callerLogger && typeof callerLogger.warn === 'function' && typeof callerLogger.error === 'function') return callerLogger
-  return fallbackLogger
+  throw new AIError('Logger requerido: pase {warn,error,info} via callAI({logger}) — logger sin fallback desde v0.1.1', { code: 'MOT-AI-010', provider: 'global' })
 }
 
-export { fallbackLogger }
-export default fallbackLogger
+export default { resolveLogger }

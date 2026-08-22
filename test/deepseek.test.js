@@ -1,3 +1,4 @@
+const mockLoggerDeep = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import {
   parseUsage,
@@ -236,7 +237,7 @@ describe('callDeepSeek credential missing', () => {
       ok: true,
       json: async () => ({ choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }], usage: {} })
     })
-    const res = await callDeepSeek({ messages: [{ role: 'user', content: 'hi' }] })
+    const res = await callDeepSeek({ logger: mockLoggerDeep, messages: [{ role: 'user', content: 'hi' }] })
     expect(res.content).toBe('ok')
     delete process.env.DEEPSEEK_API_KEY
   })
@@ -250,7 +251,7 @@ describe('callDeepSeek credential missing', () => {
         json: async () => ({ choices: [{ message: { content: 'hello' } }], usage: {} })
       }
     }
-    const res = await callDeepSeek({ messages: [{ role: 'user', content: 'hi' }] })
+    const res = await callDeepSeek({ logger: mockLoggerDeep, messages: [{ role: 'user', content: 'hi' }] })
     expect(res.content).toBe('hello')
     expect('apiKey' in res).toBe(false)
     expect(JSON.stringify(res).includes('sk-secret')).toBe(false)
@@ -277,7 +278,7 @@ describe('callDeepSeek timeout AbortError', () => {
     }
     let caught
     try {
-      await callDeepSeek({ messages: [{ role: 'user', content: 'hi' }], timeoutMs: 10 })
+      await callDeepSeek({ logger: mockLoggerDeep, messages: [{ role: 'user', content: 'hi' }], timeoutMs: 10 })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -293,7 +294,7 @@ describe('callDeepSeek timeout AbortError', () => {
       ok: true,
       json: async () => ({ choices: [], usage: null })
     })
-    const res = await callDeepSeek({ messages: [{ role: 'user', content: 'hi' }] })
+    const res = await callDeepSeek({ logger: mockLoggerDeep, messages: [{ role: 'user', content: 'hi' }] })
     expect(res.content).toBe('')
     expect(res.usage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 })
   })

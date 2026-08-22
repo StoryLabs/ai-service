@@ -6,6 +6,7 @@ import { UnknownModelError, ProviderNotRegisteredError } from '../src/errors.js'
 
 // Ensure index registration happened (callAI imports register)
 import '../src/index.js'
+const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
 describe('registry resolveProvider', () => {
   it('deepseek-v4-flash → deepseek', () => {

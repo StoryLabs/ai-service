@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI, aiComplete, MODELOS, MUSE_MODELS, StreamingNotSupportedError } from '../src/index.js'
 import { UnknownModelError, ContextExceededError, DeepSeekContextoExcedidoError, AIError } from '../src/errors.js'
 
+const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
+
 describe('callAI integration mocked fetch', () => {
   let origFetch
   let origEnvDeepSeek
@@ -37,7 +39,7 @@ describe('callAI integration mocked fetch', () => {
         })
       }
     }
-    const res = await callAI({
+    const res = await callAI({ logger: mockLogger,
       messages: [{ role: 'user', content: 'Hi' }],
       model: MODELOS.NORMAL,
       config: { temperature: 0.2 }
@@ -57,7 +59,7 @@ describe('callAI integration mocked fetch', () => {
       ok: true,
       json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} })
     })
-    const res = await aiComplete({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const res = await aiComplete({logger: mockLogger,messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(res.content).toBe('ok')
   })
 
@@ -68,7 +70,7 @@ describe('callAI integration mocked fetch', () => {
       expect(body.messages[0].content).toBe('via prompts')
       return { ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} }) }
     }
-    const res = await callAI({ prompts: [{ role: 'user', content: 'via prompts' }], model: MODELOS.NORMAL })
+    const res = await callAI({ logger: mockLogger, prompts: [{ role: 'user', content: 'via prompts' }], model: MODELOS.NORMAL })
     expect(res.content).toBe('ok')
   })
 
@@ -99,7 +101,7 @@ describe('callAI integration mocked fetch', () => {
     }
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: 'unknown-xyz' })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: 'unknown-xyz' })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -118,7 +120,7 @@ describe('callAI integration mocked fetch', () => {
     }
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -140,7 +142,7 @@ describe('callAI integration mocked fetch', () => {
     }
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -151,21 +153,25 @@ describe('callAI integration mocked fetch', () => {
     expect(fetched).toBe(false)
   })
 
-  it('muse con env var pero stub → AIError actionable', async () => {
+  it('muse con env var → fetch muse success', async () => {
     process.env.MUSE_API_KEY = 'sk-muse'
-    global.fetch = async () => {
-      throw new Error('should not fetch')
+    global.fetch = async (url, opts) => {
+      expect(url).toBe('https://api.muse.example.com/v1/chat/completions')
+      const body = JSON.parse(opts.body)
+      expect(body.model).toBe(MUSE_MODELS.SPARK)
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'Hola Muse', reasoning_content: null }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 5, completion_tokens: 10, total_tokens: 15 }
+        })
+      }
     }
-    let caught
-    try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
-      throw new Error('should have thrown')
-    } catch (err) {
-      caught = err
-    }
-    expect(caught).toBeInstanceOf(AIError)
-    expect(caught.provider).toBe('muse')
-    expect(caught.message).toMatch(/Muse Spark no está configurado/)
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK })
+    expect(res.content).toBe('Hola Muse')
+    expect(res.provider).toBe('muse')
+    expect(res.model).toBe(MUSE_MODELS.SPARK)
+    expect(res.usage).toEqual({ promptTokens: 5, completionTokens: 10, totalTokens: 15 })
   })
 
   it('stream stub throws StreamingNotSupportedError MOT-AI-018', async () => {
@@ -206,14 +212,14 @@ describe('callAI integration mocked fetch', () => {
       id: 'abc'
     }
     global.fetch = async () => ({ ok: true, json: async () => rawPayload })
-    const res = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL, config: { includeRaw: true } })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL, config: { includeRaw: true } })
     expect(res.raw).toEqual(rawPayload)
   })
 
   it('no expone credentials en resultado', async () => {
     process.env.DEEPSEEK_API_KEY = 'sk-super-secret-123'
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'hi' } }], usage: {} }) })
-    const res = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     const serialized = JSON.stringify(res)
     expect(serialized.includes('sk-super-secret-123')).toBe(false)
     expect(serialized.includes('DEEPSEEK_API_KEY')).toBe(false)
@@ -228,7 +234,7 @@ describe('callAI integration mocked fetch', () => {
     })
     let caught
     try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+      await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -239,23 +245,22 @@ describe('callAI integration mocked fetch', () => {
   })
 
   it('messages vacío → AIError', async () => {
-    await expect(callAI({ messages: [], model: MODELOS.NORMAL })).rejects.toThrow(AIError)
-    await expect(callAI({ model: MODELOS.NORMAL })).rejects.toThrow(AIError)
+    await expect(callAI({ logger: mockLogger, messages: [], model: MODELOS.NORMAL })).rejects.toThrow(AIError)
+    await expect(callAI({ logger: mockLogger, model: MODELOS.NORMAL })).rejects.toThrow(AIError)
   })
 
   it('model missing → AIError', async () => {
-    await expect(callAI({ messages: [{ role: 'user', content: 'hi' }] })).rejects.toThrow(AIError)
+    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }] })).rejects.toThrow(AIError)
   })
 
   it('provider explicit forces muse for model', async () => {
     process.env.MUSE_API_KEY = 'sk-muse'
-    let caught
-    try {
-      await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK, provider: 'muse' })
-      throw new Error('should have thrown')
-    } catch (err) {
-      caught = err
-    }
-    expect(caught.provider).toBe('muse')
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok muse' } }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })
+    })
+    const res = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MUSE_MODELS.SPARK, provider: 'muse' })
+    expect(res.provider).toBe('muse')
+    expect(res.content).toBe('ok muse')
   })
 })

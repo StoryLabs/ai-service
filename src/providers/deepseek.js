@@ -88,7 +88,7 @@ export const clasificarFallo = async (response, intentos, logger) => {
  * Internal helper that does the fetch and normalizes to NormalizedResult.
  * Accepts already-resolved config fields.
  */
-async function executeDeepSeek({ messages, model, temperature, maxTokens, userId, signal, logger, intentos, includeRaw }) {
+async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, intentos, includeRaw }) {
   const log = resolveLogger(logger)
 
   const apiKey = (process.env.DEEPSEEK_API_KEY ?? '').trim()
@@ -108,6 +108,13 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, userId
     messages,
     temperature,
     max_tokens: tope,
+    ...(topP != null ? { top_p: topP } : {}),
+    ...(topK != null ? { top_k: topK } : {}),
+    ...(presencePenalty != null ? { presence_penalty: presencePenalty } : {}),
+    ...(frequencyPenalty != null ? { frequency_penalty: frequencyPenalty } : {}),
+    ...(stop != null ? { stop } : {}),
+    ...(seed != null ? { seed } : {}),
+    ...(responseFormat != null ? { response_format: responseFormat } : {}),
     ...(userId ? { user_id: String(userId) } : {})
   }
 
@@ -124,7 +131,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, userId
 
     if (!response.ok) {
       const reintentar = await clasificarFallo(response, intentos, log)
-      return executeDeepSeek({ messages, model, temperature, maxTokens, userId, signal, logger: log, intentos: reintentar, includeRaw })
+      return executeDeepSeek({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger: log, intentos: reintentar, includeRaw })
     }
 
     let result
@@ -174,6 +181,13 @@ export const callDeepSeek = async ({
   model = MODELOS.NORMAL,
   temperature = 0.2,
   maxTokens = null,
+  topP = null,
+  topK = null,
+  presencePenalty = null,
+  frequencyPenalty = null,
+  stop = null,
+  seed = null,
+  responseFormat = null,
   userId = null,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   intentos = MAX_INTENTOS,
@@ -198,6 +212,13 @@ export const callDeepSeek = async ({
       model,
       temperature,
       maxTokens,
+      topP,
+      topK,
+      presencePenalty,
+      frequencyPenalty,
+      stop,
+      seed,
+      responseFormat,
       userId,
       signal,
       logger: log,
@@ -235,7 +256,14 @@ export const deepseekProvider = {
       temperature: config.temperature ?? 0.2,
       maxTokens: config.maxTokens ?? null,
       timeoutMs: config.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      includeRaw: config.includeRaw ?? false
+      includeRaw: config.includeRaw ?? false,
+      topP: config.topP ?? null,
+      topK: config.topK ?? null,
+      presencePenalty: config.presencePenalty ?? null,
+      frequencyPenalty: config.frequencyPenalty ?? null,
+      stop: config.stop ?? null,
+      seed: config.seed ?? null,
+      responseFormat: config.responseFormat ?? null
     }
 
     // If caller already composed a signal with timeout (via callAI), use it directly.
@@ -246,6 +274,13 @@ export const deepseekProvider = {
         model,
         temperature: merged.temperature,
         maxTokens: merged.maxTokens,
+        topP: merged.topP,
+        topK: merged.topK,
+        presencePenalty: merged.presencePenalty,
+        frequencyPenalty: merged.frequencyPenalty,
+        stop: merged.stop,
+        seed: merged.seed,
+        responseFormat: merged.responseFormat,
         userId,
         signal,
         logger: log,
@@ -270,6 +305,13 @@ export const deepseekProvider = {
       model,
       temperature: merged.temperature,
       maxTokens: merged.maxTokens,
+      topP: merged.topP,
+      topK: merged.topK,
+      presencePenalty: merged.presencePenalty,
+      frequencyPenalty: merged.frequencyPenalty,
+      stop: merged.stop,
+      seed: merged.seed,
+      responseFormat: merged.responseFormat,
       userId,
       timeoutMs: merged.timeoutMs,
       logger: log,

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { callAI, MODELOS } from '../../src/index.js'
 import { DeepSeekContextoExcedidoError, HTTPError, TimeoutError } from '../../src/errors.js'
+const mockLogger = { warn: () => {}, error: () => {}, info: () => {}, debug: () => {} }
 
 describe('integration deepseek mock', () => {
   let origFetch
@@ -21,7 +22,7 @@ describe('integration deepseek mock', () => {
         usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 }
       })
     })
-    const r = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(r.content).toBe('hello')
     expect(r.reasoningContent).toBe('reason')
     expect(r.usage).toEqual({ promptTokens: 1, completionTokens: 2, totalTokens: 3 })
@@ -35,14 +36,14 @@ describe('integration deepseek mock', () => {
       if (calls === 1) return { ok: false, status: 429, text: async () => 'rate' }
       return { ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} }) }
     }
-    const r = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(r.content).toBe('ok')
     expect(calls).toBe(2)
   })
 
   it('429 tres veces → HTTPError', async () => {
     global.fetch = async () => ({ ok: false, status: 429, text: async () => 'rate' })
-    await expect(callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })).rejects.toThrow(HTTPError)
+    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })).rejects.toThrow(HTTPError)
   })
 
   it('400 context → DeepSeekContextoExcedidoError sin reintento', async () => {
@@ -51,7 +52,7 @@ describe('integration deepseek mock', () => {
       calls++
       return { ok: false, status: 400, text: async () => 'context_length exceeded' }
     }
-    await expect(callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })).rejects.toThrow(DeepSeekContextoExcedidoError)
+    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })).rejects.toThrow(DeepSeekContextoExcedidoError)
     expect(calls).toBe(1)
   })
 
@@ -61,18 +62,18 @@ describe('integration deepseek mock', () => {
       e.name = 'AbortError'
       throw e
     }
-    await expect(callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL, config: { timeoutMs: 10 } })).rejects.toThrow(TimeoutError)
+    await expect(callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL, config: { timeoutMs: 10 } })).rejects.toThrow(TimeoutError)
   })
 
   it('no choices → content "" sin throw', async () => {
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [] }) })
-    const r = await callAI({ messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, messages: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(r.content).toBe('')
   })
 
   it('alias prompts', async () => {
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: 'ok' } }], usage: {} }) })
-    const r = await callAI({ prompts: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
+    const r = await callAI({ logger: mockLogger, prompts: [{ role: 'user', content: 'hi' }], model: MODELOS.NORMAL })
     expect(r.content).toBe('ok')
   })
 })
