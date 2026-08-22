@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.4 — 2026-08-21
+- Refactor: extrae `src/retry.js` helper reutilizable `createClasificarFallo` para DeepSeek y Muse (mismo backoff 3×1s/2s, MOT-AI-011/013/014), cada adapter mantiene su `esTransitorio`/`esContextoExcedido`/`parseUsage`/`MAX_TOKENS`
+
 ## 0.3.0 — 2026-08-21
 - BREAKING: `MODELS.NORMAL` -> `MODELS.FLASH` (`'deepseek-v4-flash'`). Frontend sigue mandando `modo: 'NORMAL'` pero `ai-service` expone nombre real `FLASH` (clean). `bookingAPI` mapea `modo === 'PRO' ? MODELS.PRO : MODELS.FLASH`.
 

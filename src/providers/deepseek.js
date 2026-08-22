@@ -1,5 +1,6 @@
-import { AIError, DeepSeekContextoExcedidoError as BaseDeepSeekError, HTTPError, TimeoutError } from '../errors.js'
+import { AIError, DeepSeekContextoExcedidoError as BaseDeepSeekError, HTTPError, TimeoutError, StreamingNotSupportedError } from '../errors.js'
 import { resolveLogger } from '../logger.js'
+import { createClasificarFallo } from '../retry.js'
 
 export const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 
@@ -47,42 +48,14 @@ export const parseUsage = (usage = {}) => {
   }
 }
 
-/**
- * Decide qué hacer con una respuesta HTTP fallida. O LANZA (fallo definitivo) o devuelve cuántos
- * intentos quedan, ya habiendo esperado el backoff.
- */
-export const clasificarFallo = async (response, intentos, logger) => {
-  const log = resolveLogger(logger)
-  const errText = await response.text()
-
-  if (esContextoExcedido(response.status, errText)) {
-    log.warn('MOT-AI-013', 'DeepSeek rechazó por contexto excedido', { status: response.status })
-    throw new BaseDeepSeekError()
-  }
-
-  if (esTransitorio(response.status) && intentos > 1) {
-    const espera = ESPERA_BASE_MS * (MAX_INTENTOS - intentos + 1)
-
-    log.warn('MOT-AI-014', 'DeepSeek falló con error transitorio — reintentando', {
-      status: response.status,
-      intentosRestantes: intentos - 1,
-      esperaMs: espera
-    })
-
-    await new Promise(resolve => {
-      setTimeout(resolve, espera)
-    })
-
-    return intentos - 1
-  }
-
-  log.error('MOT-AI-011', 'Error HTTP desde DeepSeek API', { status: response.status, body: errText })
-  throw new HTTPError(`Error en API DeepSeek (${response.status})`, {
-    provider: 'deepseek',
-    status: response.status,
-    body: errText
-  })
-}
+export const clasificarFallo = createClasificarFallo({
+  esTransitorio,
+  esContextoExcedido,
+  MAX_INTENTOS,
+  ESPERA_BASE_MS,
+  provider: 'deepseek',
+  ContextError: BaseDeepSeekError
+})
 
 /**
  * Internal helper that does the fetch and normalizes to NormalizedResult.
@@ -242,7 +215,6 @@ export const callDeepSeek = async ({
 }
 
 // AIProvider adapter
-import { StreamingNotSupportedError } from '../errors.js'
 
 export const deepseekProvider = {
   name: 'deepseek',

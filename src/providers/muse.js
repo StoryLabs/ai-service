@@ -1,5 +1,7 @@
 import { AIError, HTTPError, TimeoutError, StreamingNotSupportedError } from '../errors.js'
 import { resolveLogger } from '../logger.js'
+import { createClasificarFallo } from '../retry.js'
+import { ContextExceededError } from '../errors.js'
 
 // Muse Spark via fetch — OpenAI-compatible endpoint (Meta protocol : https://dev.meta.ai/docs/protocols )
 export const MUSE_URL = 'https://api.muse.example.com/v1/chat/completions'
@@ -39,23 +41,14 @@ export const parseUsageMuse = (usage = {}) => {
   return { promptTokens, completionTokens, totalTokens: total }
 }
 
-export const clasificarFalloMuse = async (response, intentos, logger) => {
-  const log = resolveLogger(logger)
-  const errText = await response.text()
-  if (esContextoExcedidoMuse(response.status, errText)) {
-    const { ContextExceededError } = await import('../errors.js')
-    log.warn('MOT-AI-013', 'Muse rechazó por contexto excedido', { status: response.status })
-    throw new ContextExceededError('La conversación es demasiado larga para Muse.', { provider: 'muse' })
-  }
-  if (esTransitorioMuse(response.status) && intentos > 1) {
-    const espera = ESPERA_BASE_MUSE * (MAX_INTENTOS_MUSE - intentos + 1)
-    log.warn('MOT-AI-014', 'Muse falló con error transitorio — reintentando', { status: response.status, intentosRestantes: intentos - 1, esperaMs: espera })
-    await new Promise(r => setTimeout(r, espera))
-    return intentos - 1
-  }
-  log.error('MOT-AI-011', 'Error HTTP desde Muse API', { status: response.status, body: errText })
-  throw new HTTPError(`Error en API Muse (${response.status})`, { provider: 'muse', status: response.status, body: errText })
-}
+export const clasificarFalloMuse = createClasificarFallo({
+  esTransitorio: esTransitorioMuse,
+  esContextoExcedido: esContextoExcedidoMuse,
+  MAX_INTENTOS: MAX_INTENTOS_MUSE,
+  ESPERA_BASE_MS: ESPERA_BASE_MUSE,
+  provider: 'muse',
+  ContextError: ContextExceededError
+})
 
 async function executeMuse({ messages, model, temperature, maxTokens, topP, topK, presencePenalty, frequencyPenalty, stop, seed, responseFormat, userId, signal, logger, intentos, includeRaw }) {
   const log = resolveLogger(logger)
