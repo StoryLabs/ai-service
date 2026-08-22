@@ -11,9 +11,9 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 # @cachac:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @cachac/ai-service@^0.1.6
+pnpm add @cachac/ai-service@^0.1.7
 # or
-npm install @cachac/ai-service@^0.1.6
+npm install @cachac/ai-service@^0.1.7
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.

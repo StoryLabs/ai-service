@@ -4,7 +4,7 @@ import { createClassifyFailure } from '../retry.js'
 import { ContextExceededError } from '../errors.js'
 
 // Muse Spark via fetch — OpenAI-compatible endpoint (Meta protocol : https://dev.meta.ai/docs/protocols )
-export const MUSE_URL = 'https://api.muse.example.com/v1/chat/completions'
+export const MUSE_URL = 'https://api.meta.ai/v1/chat/completions'
 
 export const MUSE_MODELS = {
   SPARK: 'muse-spark-1.2-contributor'
@@ -62,15 +62,14 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
     model,
     messages,
     temperature,
-    max_tokens: maxTokensLimit,
+    max_completion_tokens: maxTokensLimit,
     ...(topP != null ? { top_p: topP } : {}),
-    ...(topK != null ? { top_k: topK } : {}),
+    // top_k and stop not supported on Muse Spark (400) — omitted intentionally
     ...(presencePenalty != null ? { presence_penalty: presencePenalty } : {}),
     ...(frequencyPenalty != null ? { frequency_penalty: frequencyPenalty } : {}),
-    ...(stop != null ? { stop } : {}),
     ...(seed != null ? { seed } : {}),
     ...(responseFormat != null ? { response_format: responseFormat } : {}),
-    ...(userId ? { user_id: String(userId) } : {})
+    ...(userId ? { safety_identifier: String(userId) } : {})
   }
   try {
     const response = await fetch(MUSE_URL, {
@@ -117,7 +116,7 @@ async function executeMuse({ messages, model, temperature, maxTokens, topP, topK
 export async function callMuse({
   messages,
   model = MUSE_MODELS.SPARK,
-  temperature = 0.3,
+  temperature = 1.0,
   maxTokens = null,
   topP = null,
   topK = null,
@@ -162,7 +161,7 @@ export const museProvider = {
   async complete({ messages, model, config = {}, userId, signal, logger }) {
     const log = resolveLogger(logger)
     const merged = {
-      temperature: config.temperature ?? 0.3,
+      temperature: config.temperature ?? 1.0,
       maxTokens: config.maxTokens ?? MAX_TOKENS_MUSE[model] ?? MUSE_FALLBACK_MAX_TOKENS,
       timeoutMs: config.timeoutMs ?? DEFAULT_TIMEOUT_MUSE,
       includeRaw: config.includeRaw ?? false,

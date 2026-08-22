@@ -27,7 +27,7 @@ export const DEFAULTS = {
     responseFormat: null
   },
   muse: {
-    temperature: 0.3,
+    temperature: 1.0,
     timeoutMs: 120_000,
     maxTokensByModel: {
       'muse-spark-1.2-contributor': 4096

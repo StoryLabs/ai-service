@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.7 — 2026-08-21
+- Fix Muse: `MUSE_URL` -> `https://api.meta.ai/v1/chat/completions` (real, verificado `curl https://api.meta.ai/v1/models` + `chat/completions` pong), payload `max_completion_tokens` (no `max_tokens`), omite `top_k`/`stop` (400 en Muse Spark), `safety_identifier` para `userId`, `temperature` default `1.0` per docs (tuned to 1.0)
+
 ## 0.1.6 — 2026-08-21
 - Fix: `MUSE_MODELS.SPARK` vuelve a `'muse-spark-1.2-contributor'` (modelo real), `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` es `MUSE_API_KEY` (credencial, no modelo) — corrige payload `model`
 
