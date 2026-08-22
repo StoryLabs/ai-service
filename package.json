@@ -1,0 +1,72 @@
+{
+  "name": "@cachac/ai-service",
+  "version": "0.1.0",
+  "description": "Motmot centralized AI service — unified callAI across DeepSeek, Muse Spark and future providers.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json",
+    "./errors": "./src/errors.js",
+    "./providers": "./src/providers/registry.js"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cachac/ai-service.git"
+  },
+  "license": "ISC",
+  "private": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@cachac/storylabs-logger": "^0.1.3"
+  },
+  "peerDependenciesMeta": {
+    "@cachac/storylabs-logger": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2"
+  },
+  "scripts": {
+    "test": "bun test --timeout 30000",
+    "test:unit": "bun test test/unit --timeout 30000",
+    "test:integration": "bun test test/integration --timeout 30000",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "format": "prettier --write \"src/**/*.js\" \"test/**/*.js\""
+  },
+  "prettier": {
+    "trailingComma": "none",
+    "bracketSpacing": true,
+    "endOfLine": "lf",
+    "arrowParens": "avoid",
+    "htmlWhitespaceSensitivity": "css",
+    "insertPragma": false,
+    "jsxBracketSameLine": false,
+    "jsxSingleQuote": false,
+    "proseWrap": "preserve",
+    "quoteProps": "preserve",
+    "requirePragma": false,
+    "semi": false,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "useTabs": false,
+    "printWidth": 150
+  }
+}
