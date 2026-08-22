@@ -76,11 +76,11 @@ describe('esTransitorio', () => {
 
 describe('topeDeRespuesta', () => {
   it('retorna MAX_TOKENS por modelo cuando maxTokens null', () => {
-    expect(topeDeRespuesta(null, MODELS.NORMAL)).toBe(6000)
+    expect(topeDeRespuesta(null, MODELS.FLASH)).toBe(6000)
     expect(topeDeRespuesta(undefined, MODELS.PRO)).toBe(8000)
   })
   it('respeta maxTokens explícito', () => {
-    expect(topeDeRespuesta(1234, MODELS.NORMAL)).toBe(1234)
+    expect(topeDeRespuesta(1234, MODELS.FLASH)).toBe(1234)
     expect(topeDeRespuesta(0, MODELS.PRO)).toBe(0)
   })
   it('fallback 4000 para modelo no tabulado', () => {
@@ -92,11 +92,11 @@ describe('topeDeRespuesta', () => {
 
 describe('constantes', () => {
   it('MODELS literales preservados', () => {
-    expect(MODELS.NORMAL).toBe('deepseek-v4-flash')
+    expect(MODELS.FLASH).toBe('deepseek-v4-flash')
     expect(MODELS.PRO).toBe('deepseek-v4-pro')
   })
   it('MAX_TOKENS 6000/8000', () => {
-    expect(MAX_TOKENS[MODELS.NORMAL]).toBe(6000)
+    expect(MAX_TOKENS[MODELS.FLASH]).toBe(6000)
     expect(MAX_TOKENS[MODELS.PRO]).toBe(8000)
   })
   it('DEFAULT_TIMEOUT_MS 180_000', () => {

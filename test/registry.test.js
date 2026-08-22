@@ -46,13 +46,13 @@ describe('registry resolveProvider', () => {
     expect(() => resolveProvider({ model: 'custom-flash', provider: 'deepseek' })).toThrow(UnknownModelError)
   })
   it('provider explicit valido', () => {
-    const p = resolveProvider({ model: MODELS.NORMAL, provider: 'deepseek' })
+    const p = resolveProvider({ model: MODELS.FLASH, provider: 'deepseek' })
     expect(p.name).toBe('deepseek')
   })
   it('provider unknown → ProviderNotRegisteredError MOT-AI-017', () => {
     let caught
     try {
-      resolveProvider({ model: MODELS.NORMAL, provider: 'openai' })
+      resolveProvider({ model: MODELS.FLASH, provider: 'openai' })
       throw new Error('should have thrown')
     } catch (err) {
       caught = err
@@ -63,7 +63,7 @@ describe('registry resolveProvider', () => {
   })
   it('listModels contiene ambos providers models', () => {
     const models = listModels()
-    expect(models.includes(MODELS.NORMAL)).toBe(true)
+    expect(models.includes(MODELS.FLASH)).toBe(true)
     expect(models.includes(MODELS.PRO)).toBe(true)
     expect(models.includes(MUSE_MODELS.SPARK)).toBe(true)
   })

@@ -24,7 +24,7 @@ register(museProvider)
 // Populate model table for exact matches (avoids circular import)
 // includes new Muse id + legacy alias for backward compat
 setModelTable({
-  [DeepSeekModels.NORMAL]: 'deepseek',
+  [DeepSeekModels.FLASH]: 'deepseek',
   [DeepSeekModels.PRO]: 'deepseek',
   [MUSE_MODELS.SPARK]: 'muse',
   'muse-spark-1.2-contributor': 'muse'

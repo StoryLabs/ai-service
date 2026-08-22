@@ -33,7 +33,7 @@ Each adapter reads **its own env var**, isolated. Rotating one key doesn't affec
 
 | key | model id literal | provider | MAX_TOKENS default | timeout default |
 |-----|------------------|----------|-------------------|-----------------|
-| `MODELS.NORMAL` | `deepseek-v4-flash` | `deepseek` | 6000 | 180_000 ms |
+| `MODELS.FLASH` | `deepseek-v4-flash` | `deepseek` | 6000 | 180_000 ms |
 | `MODELS.PRO` | `deepseek-v4-pro` | `deepseek` | 8000 | 180_000 ms |
 | `MUSE_MODELS.SPARK` | `LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU` (`muse-spark-1.2-contributor` alias) | `muse` | 4096 | 120_000 ms |
 | fallback | any `deepseek-*` | `deepseek` | 4000 | 180_000 ms |
@@ -44,7 +44,7 @@ IDs are literals, no translation.
 ```js
 import { MODELS, MUSE_MODELS } from '@cachac/ai-service'
 // MODELS
-// MODELS.NORMAL === 'deepseek-v4-flash'
+// MODELS.FLASH === 'deepseek-v4-flash'
 // MODELS.PRO === 'deepseek-v4-pro'
 // MUSE_MODELS.SPARK === 'LLM_1751420409235724_4VRvEUuB8UJRvaAMotFs0f66XpU'
 ```
@@ -59,7 +59,7 @@ import { callAI, MODELS, ContextExceededError } from '@cachac/ai-service'
 try {
   const { content, reasoningContent, usage, finishReason, provider, model } = await callAI({
     messages: [{ role: 'system', content: 'Eres asistente clínico...' }, { role: 'user', content: 'Hola' }],
-    model: MODELS.NORMAL, // 'deepseek-v4-flash'
+    model: MODELS.FLASH, // 'deepseek-v4-flash'
     config: { temperature: 0.2, maxTokens: 6000, timeoutMs: 180_000 },
     userId: '507f...' // optional, passed as user_id to provider
   })
@@ -211,7 +211,7 @@ import { makeLogger } from '@cachac/storylabs-logger'
 import { CODES } from './codes.js'
 const log = makeLogger({ app: 'bookingAPI', prefix: 'AI', codes: CODES })
 
-await callAI({ messages, model: MODELS.NORMAL, logger: log })
+await callAI({ messages, model: MODELS.FLASH, logger: log })
 ```
 
 Códigos `MOT-AI-01x` preservados de `deepseekClient.js`:

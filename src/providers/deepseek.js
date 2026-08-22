@@ -12,12 +12,12 @@ export const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 export const DEFAULT_TIMEOUT_MS = 180_000
 
 export const MODELS = {
-  NORMAL: 'deepseek-v4-flash',
+  FLASH: 'deepseek-v4-flash',
   PRO: 'deepseek-v4-pro'
 }
 
 export const MAX_TOKENS = {
-  [MODELS.NORMAL]: 6000,
+  [MODELS.FLASH]: 6000,
   [MODELS.PRO]: 8000
 }
 
@@ -178,7 +178,7 @@ async function executeDeepSeek({ messages, model, temperature, maxTokens, topP, 
  */
 export const callDeepSeek = async ({
   messages,
-  model = MODELS.NORMAL,
+  model = MODELS.FLASH,
   temperature = 0.2,
   maxTokens = null,
   topP = null,

@@ -16,14 +16,14 @@ describe('registry unit', () => {
     expect(() => resolveProvider({ model: 'unknown' })).toThrow(UnknownModelError)
   })
   it('provider no registrado → ProviderNotRegisteredError', () => {
-    expect(() => resolveProvider({ model: MODELS.NORMAL, provider: 'openai' })).toThrow(ProviderNotRegisteredError)
+    expect(() => resolveProvider({ model: MODELS.FLASH, provider: 'openai' })).toThrow(ProviderNotRegisteredError)
   })
   it('provider explicit valido', () => {
     expect(resolveProvider({ model: MODELS.PRO, provider: 'deepseek' }).name).toBe('deepseek')
   })
   it('listModels contiene todos', () => {
     const m = listModels()
-    expect(m.includes(MODELS.NORMAL)).toBe(true)
+    expect(m.includes(MODELS.FLASH)).toBe(true)
     expect(m.includes(MUSE_MODELS.SPARK)).toBe(true)
   })
 })
