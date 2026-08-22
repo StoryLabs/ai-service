@@ -248,3 +248,9 @@ Tests use `bun:test` (`describe`/`it`/`expect`/`mock` from `bun:test`, `global.f
 ## License
 
 ISC
+
+## How to upload the package
+```bash
+git add . && git commit -m "new version" && git push
+gh release create v0.1.3 --title v0.1.3 --notes "new version"
+```
