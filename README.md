@@ -1,4 +1,4 @@
-# @cachac/ai-service
+# @storylabs/ai-service
 
 Centralized AI service — unified `callAI` across DeepSeek, Muse Spark and future providers.
 
@@ -8,12 +8,12 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 
 ```bash
 # .npmrc must contain (added automatically with pnpm/npm):
-# @cachac:registry=https://npm.pkg.github.com
+# @storylabs:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @cachac/ai-service@^0.1.8
+pnpm add @storylabs/ai-service@^0.2.0
 # or
-npm install @cachac/ai-service@^0.1.8
+npm install @storylabs/ai-service@^0.2.0
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.
@@ -42,7 +42,7 @@ Each adapter reads **its own env var**, isolated. Rotating one key doesn't affec
 IDs are literals, no translation.
 
 ```js
-import { MODELS, MUSE_MODELS } from '@cachac/ai-service'
+import { MODELS, MUSE_MODELS } from '@storylabs/ai-service'
 // MODELS
 // MODELS.FLASH === 'deepseek-v4-flash'
 // MODELS.PRO === 'deepseek-v4-pro'
@@ -54,7 +54,7 @@ import { MODELS, MUSE_MODELS } from '@cachac/ai-service'
 ### Non-streaming
 
 ```js
-import { callAI, MODELS, ContextExceededError } from '@cachac/ai-service'
+import { callAI, MODELS, ContextExceededError } from '@storylabs/ai-service'
 
 try {
   const { content, reasoningContent, usage, finishReason, provider, model } = await callAI({
@@ -90,14 +90,14 @@ await callAI({ messages, model: 'custom-flash', provider: 'deepseek' })
 Direct DeepSeek port (compat):
 
 ```js
-import { callDeepSeek, MODELS } from '@cachac/ai-service'
+import { callDeepSeek, MODELS } from '@storylabs/ai-service'
 const { content, usage } = await callDeepSeek({ messages, model: MODELS.PRO, temperature: 0.2 })
 ```
 
 ### Error handling
 
 ```js
-import { callAI, MODELS, AIError, ContextExceededError, DeepSeekContextExceededError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@cachac/ai-service'
+import { callAI, MODELS, AIError, ContextExceededError, DeepSeekContextExceededError, TimeoutError, UnknownModelError, ProviderNotRegisteredError, HTTPError } from '@storylabs/ai-service'
 
 try {
   await callAI({ messages, model: 'unknown-model' })
@@ -151,7 +151,7 @@ Agotar 8 000 tokens a ~55 tok/s ronda 145 s, así que 180 s es necesario para el
 > **Estado en 0.1.0:** investigado, **stub**. `callAI.stream()` lanza `StreamingNotSupportedError` (`MOT-AI-018`). Ver `docs/specs/10-ai-service.md §13` y `src/stream.js` para análisis completo.
 
 ```js
-import { callAI, StreamingNotSupportedError } from '@cachac/ai-service'
+import { callAI, StreamingNotSupportedError } from '@storylabs/ai-service'
 
 try {
   for await (const chunk of callAI.stream({ messages, model: MODELS.PRO })) {
@@ -165,7 +165,7 @@ try {
 }
 
 // Aliases
-import { streamAI, stream } from '@cachac/ai-service'
+import { streamAI, stream } from '@storylabs/ai-service'
 for await (const chunk of streamAI(args)) {}
 for await (const chunk of stream(args)) {}
 ```
@@ -193,7 +193,7 @@ Research summary:
 ## Provider system
 
 ```js
-import { register, resolveProvider, listModels } from '@cachac/ai-service'
+import { register, resolveProvider, listModels } from '@storylabs/ai-service'
 
 // Añadir un provider (N providers)
 import { openaiProvider } from './providers/openai.js'
@@ -204,10 +204,10 @@ register(openaiProvider) // ahora callAI resuelve 'openai-*' sin tocar callers
 
 ## Logger
 
-REQUERIDO desde v0.1.1 — sin fallback a `console`. Host DEBE pasar su logger construido con `@cachac/storylabs-logger` (o `{warn,error,info}`) via `callAI({logger})`, si no lanza `MOT-AI-010`.:
+REQUERIDO desde v0.1.1 — sin fallback a `console`. Host DEBE pasar su logger construido con `@storylabs/logger` (o `{warn,error,info}`) via `callAI({logger})`, si no lanza `MOT-AI-010`.:
 
 ```js
-import { makeLogger } from '@cachac/storylabs-logger'
+import { makeLogger } from '@storylabs/logger'
 import { CODES } from './codes.js'
 const log = makeLogger({ app: 'bookingAPI', prefix: 'AI', codes: CODES })
 
@@ -253,5 +253,5 @@ ISC
 ## How to upload the package
 ```bash
 git add . && git commit -m "new version" && git push
-gh release create v0.1.5 --title v0.1.5 --notes "new version"
+gh release create v0.2.0 --title v0.2.0 --notes "new version"
 ```

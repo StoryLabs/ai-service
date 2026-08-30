@@ -1,8 +1,8 @@
-name: Publish @cachac/ai-service
+name: Publish @storylabs/ai-service
 
 # Publish to GitHub Packages when a GitHub Release is published, or on manual run.
-# Uses the built-in GITHUB_TOKEN (no PAT needed) since this repo and the @cachac
-# scope share the cachac owner.
+# Uses the built-in GITHUB_TOKEN (no PAT needed) since this repo and the @storylabs
+# scope share the StoryLabs owner.
 on:
   release:
     types: [published]
@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@cachac'
+          scope: '@storylabs'
 
       - name: Publish if version is new
         env:

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0 — 2026-08-29
+- Scope y repositorio migrados de `@cachac/ai-service` a `@storylabs/ai-service` (`github.com/StoryLabs/ai-service`)
+- Peer dependency migrada de `@cachac/storylabs-logger` a `@storylabs/logger`
+
 ## 0.1.8 — 2026-08-21
 - `MODEL_NAME` global (`DEEPSEEK`| `META`) + `reasoningEffort` (`low`/`xhigh`) — `bookingAPI` mapea `modo NORMAL`->`FLASH`/`low`, `PRO`->`PRO`/`xhigh` via `config.MODEL_NAME` (APP_ENV), `Muse` usa `reasoning_effort`, `DeepSeek` lo ignora. `config` 12-key: añade `reasoningEffort` validación `MOT-AI-016` (`low`|`medium`|`high`|`xhigh`|`minimal`|`none` no soportado en Muse Spark)
 

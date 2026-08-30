@@ -1,6 +1,6 @@
 {
-  "name": "@cachac/ai-service",
-  "version": "0.1.8",
+  "name": "@storylabs/ai-service",
+  "version": "0.2.0",
   "description": "Motmot centralized AI service \u2014 unified callAI across DeepSeek, Muse Spark and future providers.",
   "type": "module",
   "main": "src/index.js",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/cachac/ai-service.git"
+    "url": "git+ssh://git@github.com/StoryLabs/ai-service.git"
   },
   "license": "ISC",
   "private": false,
@@ -29,10 +29,10 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@cachac/storylabs-logger": "^0.1.3"
+    "@storylabs/logger": "^1.0.0"
   },
   "peerDependenciesMeta": {
-    "@cachac/storylabs-logger": {
+    "@storylabs/logger": {
       "optional": true
     }
   },
