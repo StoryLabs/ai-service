@@ -11,9 +11,9 @@ ESM-only, Node >=18, zero runtime dependencies, published to GitHub Packages (`h
 # @storylabs:registry=https://npm.pkg.github.com
 # //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 
-pnpm add @storylabs/ai-service@^0.2.0
+pnpm add @storylabs/ai-service@^0.3.0
 # or
-npm install @storylabs/ai-service@^0.2.0
+npm install @storylabs/ai-service@^0.3.0
 ```
 
 Auth: `GITHUB_TOKEN` / `NODE_AUTH_TOKEN` with `read:packages` scope (GitHub Packages). In CI set `NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}`.
